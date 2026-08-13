@@ -1,279 +1,269 @@
 <div align="center">
-<h1>FastGS: Training 3D Gaussian Splatting in 100 Seconds</h1> 
-<h2>CVPR 2026</h2> 
 
-[🌐 Homepage](https://fastgs.github.io/) | [📄 Paper](https://arxiv.org/abs/2511.04283) ｜[🤗 Pre-trained model](https://huggingface.co/Goodsleepeverday/fastgs)
+# HAB-FastGS
+
+### Hardware-Aware Budgeting for Fast 3D Gaussian Splatting
+
+在 [FastGS](https://github.com/fastgs/FastGS) 训练框架内实施显式 Gaussian 预算控制，面向受限硬件上的模型规模、质量与渲染速度折中。
 
 </div>
 
-<p align="center">
-    <img src="assets/teaser_fastgs.png" width="800px"/>
-</p>
+> [!IMPORTANT]
+> 本仓库公开的是论文实验冻结版本 `20260803-opacity-per-event-82-v4`。正式结果支持“固定 18% Gaussian 压缩与有限场景域的资源—质量折中”，不支持广义感知质量非劣、必然训练加速或跨渲染器的普遍领先。完整门槛与失败项均在本文和 [`docs/experiments`](docs/experiments/) 中披露。
 
-## 🚀 What Makes FastGS Special?
+## 方法概览
 
-FastGS is a **general acceleration framework** that supercharges 3D Gaussian Splatting training while maintaining Comparable rendering quality. Our method stands out with:
+HAB-FastGS 不改变 3D Gaussian Splatting 的表示和 FastGS rasterizer，而是在训练期的 densification 事件中加入预算约束：
 
-- **⚡ Blazing Fast Training**: Achieve SOTA results within **100 seconds**. **3.32× faster** than DashGaussian on Mip-NeRF 360 dataset. **15.45× acceleration** vs vanilla 3DGS on Deep Blending.
-- **⚡ High fidelity**: Comparable rendering quality with SOTA methods
-- **🎯 Easy Integration**: Seamlessly integrates with various backbones (Vanilla 3DGS, Scaffold-GS, Mip-splatting, etc.)
-- **🛠️ Multi-Task Ready**: Proven effective across dynamic scenes, surface reconstruction, sparse-view, large-scale, and SLAM tasks
-- **💡 Memory-Efficient**: Low GPU Memory requirements make it accessible for various hardware setups
-- **🔧 Easy Deployment**: Simple post-training tool for feedforward 3DGS that works out-of-the-box
+1. 先按原始 FastGS 配方训练 seed 0 baseline，得到场景基准点数 `N_base`。
+2. 固定该场景目标 `B = floor(0.82 × N_base)`，并对其他 seed 复用同一个目标。
+3. 每次 densification 前，如果当前 Gaussian 数超过 `B`，从统一候选池中优先删除低 opacity Gaussian。
+4. 最终保存前执行精确点数检查，保证输出达到固定目标。
+5. `hab_stats.csv` 记录点数、可见率、候选数、预算裁剪量以及 rasterizer 负载代理量。
 
-## 📢 Latest Updates
-#### 🔥 **[2026.03]** The surface reconstruction code [Fast-PGSR](https://github.com/fastgs/FastGS/tree/fast-pgsr) has been released!
-#### 🎉 **[2026.02]** Our work has been accepted to CVPR 2026! 🤗🤗🤗
-#### 🥇 **[2026.01]** Our method was used as a component in the [winning solution](https://arxiv.org/pdf/2601.19489) (1st place🥇) of the **[SIGGRAPH Asia 2025 3DGS Fast Reconstruction Challenge](https://gaplab.cuhk.edu.cn/projects/gsRaceSIGA2025/index.html#awards)**. We sincerely thank the **3DV-CASIA** for their interest and adoption of our work.
-#### 🔥 **[2025.12.03]** The sparse-view reconstruction code [Fast-DropGaussian](https://github.com/fastgs/FastGS/tree/fast-dropgaussian) has been released!
-#### 🔥 **[2025.11.29]** The dynamic scene reconstruction code [Fast-D3DGS](https://github.com/fastgs/FastGS/tree/fast-d3dgs) has been released!
-#### 🔧 **[2025.11.27]** The tutorial has been released — see the [Wiki](https://github.com/fastgs/FastGS/wiki)!
-#### 📄 **[2025.11.26]** The supplementary material has been released [here](https://arxiv.org/abs/2511.04283)!
-#### 🔥 **[2025.11.17]** Pre-trained model Released 🤗!
-#### 🔥 **[2025.11.16]** Code Released - Get Started Now! 🚀
+开发阶段比较了 joint、opacity-only、score-only、radii-only、random、前/后置裁剪、per-event/ramp/final-only 等构造基线。预注册选择最终得到：
 
-
-## 🎯 Coming Soon
-
-#### Released Modules
-- **Dynamic Scenes Reconstruction** — [Fast-D3DGS](https://github.com/fastgs/FastGS/tree/fast-d3dgs) (based on [Deformable-3D-Gaussians](https://github.com/ingra14m/Deformable-3D-Gaussians)) — Released
-- **Sparse-view Reconstruction** — [Fast-DropGaussian](https://github.com/fastgs/FastGS/tree/fast-dropgaussian) (based on [DropGaussian](https://github.com/DCVL-3D/DropGaussian_release)) — Released 
-- **Surface Reconstruction** — [Fast-PGSR](https://github.com/fastgs/FastGS/tree/fast-pgsr) (based on [PGSR](https://github.com/zju3dv/PGSR)) — Released 
-
-#### To Be Released
-- **Backbone Enhancing** — based on [Mip-splatting](https://github.com/autonomousvision/mip-splatting)
-- **SLAM** — based on [Photo-SLAM](https://github.com/HuajianUP/Photo-SLAM) 
-- **Autonomous Driving Scenes** — based on [street_gaussians](https://github.com/zju3dv/street_gaussians)
-- **Large-scale Reconstruction** — based on [OctreeGS](https://github.com/city-super/Octree-GS/tree/main)
-
-## 🏗️ Training Framework
-
-Our training pipeline leverages **PyTorch** and optimized **CUDA extensions** to efficiently produce high-quality trained models in record time.
-
-### 💻 Hardware Requirements
-
-- **GPU**: CUDA-ready GPU with Compute Capability 7.0+
-- **Memory**: 24 GB VRAM (for paper-quality results; we recommend NVIDIA RTX4090)
-
-### 📦 Software Requirements
-
-- **Conda** (recommended for streamlined setup)
-- **C++ Compiler** compatible with PyTorch extensions
-- **CUDA SDK 11** (or compatible version)
-- **⚠️ Important**: Ensure C++ Compiler and CUDA SDK versions are compatible
-
-### ⚠️ CUDA Version Reference
-
-Our testing environment uses the following CUDA configuration:
-
-| Component                             | Version          |
-|---------------------------------------|------------------|
-| Conda environment CUDA version        | 11.6             |
-| Ubuntu system `nvidia-smi` CUDA       | 12.2             |
-| `nvcc -V` compiler version            | 11.8 (v11.8.89)  |
-
-> **Note**: The Conda CUDA and system CUDA versions may differ. The compiler version (`nvcc`) is what matters for PyTorch extensions compilation (diff-gaussian-rasterization_fastgs).
-
-
-## 🚀 Quick Start
-
-### 📥 Clone the Repository
-
-```bash
-git clone https://github.com/fastgs/FastGS.git --recursive
-cd FastGS
+```text
+hab_mode             = gaussian_budget
+hab_priority_mode    = opacity_only
+hab_prune_placement  = pre_densify
+hab_budget_schedule  = per_event
+target ratio         = 0.82
+exact final count    = enabled
 ```
 
-### ⚙️ Environment Setup
+joint 优先级在开发集上未通过预注册 FPS、PSNR 和最差 seed 门槛，因此不作为正式默认方法；load-feedback 只保留为敏感性实验。
 
-We provide a streamlined setup using Conda:
+## 正式实验结论
 
-```shell
-# Windows only
-SET DISTUTILS_USE_SDK=1
+### FastGS 配对主实验
 
-# Create and activate environment
-conda env create --file environment.yml
-conda activate fastgs
-```
+确认集为 `train / drjohnson / garden / room`，每个场景使用 seed `{0,1,2}`。质量指标统一采用 FastGS PSNR/SSIM 和 VGG-LPIPS；FPS 使用同一 GPU、同一进程、共享 Scene 的交错配对测量。以下均为 `HAB − FastGS`：
 
-### 📂 Dataset Organization
+| 指标 | 层级配对估计 | 95% CI | 预注册门槛 |
+|---|---:|---:|:---:|
+| PSNR | -0.0626 dB | [-0.1304, +0.0090] | PASS |
+| SSIM | -0.00299 | [-0.00455, -0.00139] | PASS |
+| LPIPS（越低越好） | +0.00750 | [+0.00383, +0.01168] | **FAIL** |
+| 训练 wall time | -6.08% | [-8.15%, -4.08%] | **FAIL**，门槛为至少 -10% |
+| native FPS | +5.76% | [+4.15%, +7.63%] | **FAIL**，CI 下界须 >5% |
 
-Organize your datasets in the following structure:
+精确点数、无场景平均变慢和无灾难性质量下降检查均通过。因 LPIPS、wall-time 和 FPS 置信区间门槛未全部通过，论文级结论限定为：
+
+> 在冻结的四场景确认域内，HAB-FastGS 用约 18% Gaussian 资源削减换取小幅 PSNR/SSIM 代价，并观察到约 5.8% 的配对 native FPS 提升。
+
+### 统一第三方对照
+
+下表覆盖 `truck / train / playroom / drjohnson`。质量列为四场景算术均值；FPS 与 wall 为几何均值；Gaussian 数为场景均值。不同方法使用各自原生 rasterizer，因此跨方法 FPS 是统一空闲 GPU 上的描述性比较，而不是同进程配对推断。
+
+| 方法 | PSNR | SSIM | LPIPS ↓ | FPS ↑ | wall (s) ↓ | Gaussian 数 |
+|---|---:|---:|---:|---:|---:|---:|
+| FastGS | 27.0932 | 0.87404 | 0.23748 | 395.2 | 242.9 | 229,989 |
+| **HAB-FastGS** | **26.9339** | **0.87172** | **0.24333** | **408.1** | **233.3** | **188,801** |
+| Vanilla 3DGS | 26.7892 | 0.88022 | 0.20360 | 100.4 | 1580.5 | 2,027,865 |
+| Speedy-Splat | 26.4860 | 0.86140 | 0.25391 | 437.2 | 915.5 | 216,048 |
+| Taming-3DGS | 26.4435 | 0.85735 | 0.26204 | 219.6 | 362.4 | 188,795 |
+| Mini-Splatting | 26.7178 | 0.87855 | 0.21058 | 482.0 | 1202.6 | 427,047 |
+| DashGaussian | 27.1462 | 0.87982 | 0.21391 | 126.6 | 371.9 | 1,573,590 |
+| ShorterSplatting | 26.4482 | 0.87158 | 0.20815 | 209.6 | 276.3 | 2,317,280 |
+
+相对几乎精确点数匹配的冻结 Taming-3DGS 配置，HAB-FastGS 在四个场景逐场景获得：
+
+- PSNR：+0.102 至 +0.961 dB；
+- LPIPS：改善 0.0109 至 0.0345；
+- native FPS：+65.6% 至 +103.9%；
+- 训练 wall ratio：0.542 至 0.742。
+
+质量与 FPS 门槛逐场景通过，但预注册的 `wall ≤ 0.5 × Taming` 门槛全部失败。因此允许的表述是“冻结配置下相对点数匹配 Taming 的质量/native-FPS 优势”，不能表述为至少 2× 训练加速。
+
+### 机制证据
+
+- 34/34 机制 collector 和 12/12 同步 FPS 作业完成。
+- 点数匹配时，opacity-only 相对 joint 在 `truck` 高 0.2387 dB，而在 `playroom` 低 0.2693 dB；优先级效果具有场景依赖性。
+- score-only / radii-only 在精确点数下损失 5.4–8.8 dB，random 在 `truck` 损失 0.565 dB。
+- 将一次性精确裁剪从 27k 推迟到 30k，会在 `truck` 损失 1.700–1.826 dB，在 `playroom` 损失 0.654 dB。
+- `ratio ∈ {1.0, 0.9, 0.82, 0.7}` Pareto 扫描已完成。
+
+完整统计、逐场景结果、协议、失败恢复和哈希清单见 [`docs/experiments/SUBMISSION_EXPERIMENT_REPORT.md`](docs/experiments/SUBMISSION_EXPERIMENT_REPORT.md)。
+
+## 环境配置
+
+正式运行环境：
+
+| 组件 | 版本 |
+|---|---|
+| OS | WSL2 / Ubuntu 22.04 |
+| Python | 3.8.20 |
+| PyTorch | 2.0.0+cu118 |
+| CUDA Toolkit | 11.8 |
+| GCC/G++ | 11.4 |
+| 正式实验 GPU | NVIDIA RTX 3080 20 GB (`sm_86`) |
+
+推荐在 WSL-Ubuntu 中创建独立 conda 环境：
 
 ```bash
+git clone https://github.com/Archaic-Atom/3DGS_WangFusheng_HAB-FastGS.git
+cd 3DGS_WangFusheng_HAB-FastGS
+
+conda create -y -n habfastgs python=3.8.20 pip
+conda activate habfastgs
+
+pip install torch==2.0.0 torchvision==0.15.1 \
+  --index-url https://download.pytorch.org/whl/cu118
+pip install plyfile tqdm websockets opencv-python scipy lpips
+
+export CUDA_HOME=/usr/local/cuda-11.8
+export PATH="$CUDA_HOME/bin:$PATH"
+export TORCH_CUDA_ARCH_LIST=8.6
+
+pip install -e submodules/simple-knn
+pip install -e submodules/fused-ssim
+pip install -e submodules/diff-gaussian-rasterization_fastgs
+```
+
+`environment.yml` 保留上游 FastGS 环境供兼容参考；正式论文数值来自上表所列的 Python 3.8 / PyTorch 2.0 / CUDA 11.8 冻结环境。
+
+## 数据准备
+
+支持标准 COLMAP/3DGS 数据布局。正式实验使用 Tanks&Temples、Deep Blending 和 Mip-NeRF 360 场景。
+
+```text
 datasets/
-├── mipnerf360/
-│   ├── bicycle/
-│   ├── flowers/
-│   └── ...
+├── tandt/
+│   ├── truck/
+│   └── train/
 ├── db/
 │   ├── playroom/
-│   └── ...
-└── tanksandtemples/
-    ├── truck/
-    └── ...
+│   └── drjohnson/
+└── m360/
+    ├── bicycle/
+    ├── garden/
+    ├── room/
+    └── counter/
 ```
 
-The MipNeRF360 scenes are hosted by the paper authors [here](https://jonbarron.info/mipnerf360/). You can find our SfM data sets for Tanks&Temples and Deep Blending [here](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/datasets/input/tandt_db.zip). 
-
-## 🎯 Training & Evaluation
-
-### ⚡ FastGS (Standard)
-
-Train the base model with optimal speed and quality balance:
+不要在权威数据目录中生成 COLMAP 文件、派生 PLY、缓存或训练输出。建议将输入数据只读复制到 WSL ext4，再将输出写入独立目录：
 
 ```bash
-bash train_base.sh
+rsync -a --chmod=a-w /mnt/<drive>/datasets/tandt/truck/ ~/hab-data/tandt/truck/
+mkdir -p ~/hab-runs
 ```
 
-### 🎨 FastGS-Big (High Quality)
+正式审计覆盖 8 个场景，source / WSL mirror / derived 清单逐字节一致；原始数据没有被原地修改。
 
-For enhanced quality with slightly longer training time:
+## 训练
+
+### 1. 训练 FastGS seed-0 基准
+
+不同场景应沿用上游 `train_base.sh` 中对应的 FastGS 参数。以 `truck` 为例：
 
 ```bash
-bash train_big.sh
-```
-<details>
-<summary><span style="font-weight: bold;">📋 Advanced: Command Line Arguments for train.py</span></summary>
-
-  #### --loss_thresh
-  Threshold of the loss map; a lower value generally results in more Gaussians being retained.
-  #### --grad_abs_thresh 
-  Absolute gradient (same as Abs-GS) threshold for split.
-  #### --grad_thresh
-  Gradient(same as vanilla 3DGS) threshold for clone.
-  #### --highfeature_lr
-  Learning rate for high-order SH coefficients (features_rest).
-  #### --lowfeature_lr
-  Learning rate for low-order SH coefficients (features_dc).
-  #### --dense
-  Percentage of scene extent (0--1) a point must exceed to be forcibly densified.
-  #### --mult 
-  Multiplier for the compact box to control the tile number of each splat
-  #### --source_path / -s
-  Path to the source directory containing a COLMAP or Synthetic NeRF data set.
-  #### --model_path / -m 
-  Path where the trained model should be stored (```output/<random>``` by default).
-  #### --images / -i
-  Alternative subdirectory for COLMAP images (```images``` by default).
-  #### --eval
-  Add this flag to use a MipNeRF360-style training/test split for evaluation.
-  #### --resolution / -r
-  Specifies resolution of the loaded images before training. If provided ```1, 2, 4``` or ```8```, uses original, 1/2, 1/4 or 1/8 resolution, respectively. For all other values, rescales the width to the given number while maintaining image aspect. **If not set and input image width exceeds 1.6K pixels, inputs are automatically rescaled to this target.**
-  #### --data_device
-  Specifies where to put the source image data, ```cuda``` by default, recommended to use ```cpu``` if training on large/high-resolution dataset, will reduce VRAM consumption, but slightly slow down training. Thanks to [HrsPythonix](https://github.com/HrsPythonix).
-  #### --white_background / -w
-  Add this flag to use white background instead of black (default), e.g., for evaluation of NeRF Synthetic dataset.
-  #### --sh_degree
-  Order of spherical harmonics to be used (no larger than 3). ```3``` by default.
-  #### --convert_SHs_python
-  Flag to make pipeline compute forward and backward of SHs with PyTorch instead of ours.
-  #### --convert_cov3D_python
-  Flag to make pipeline compute forward and backward of the 3D covariance with PyTorch instead of ours.
-  #### --debug
-  Enables debug mode if you experience erros. If the rasterizer fails, a ```dump``` file is created that you may forward to us in an issue so we can take a look.
-  #### --debug_from
-  Debugging is **slow**. You may specify an iteration (starting from 0) after which the above debugging becomes active.
-  #### --iterations
-  Number of total iterations to train for, ```30_000``` by default.
-  #### --ip
-  IP to start GUI server on, ```127.0.0.1``` by default.
-  #### --port 
-  Port to use for GUI server, ```6009``` by default.
-  #### --test_iterations
-  Space-separated iterations at which the training script computes L1 and PSNR over test set, ```7000 30000``` by default.
-  #### --save_iterations
-  Space-separated iterations at which the training script saves the Gaussian model, ```7000 30000 <iterations>``` by default.
-  #### --checkpoint_iterations
-  Space-separated iterations at which to store a checkpoint for continuing later, saved in the model directory.
-  #### --start_checkpoint
-  Path to a saved checkpoint to continue training from.
-  #### --quiet 
-  Flag to omit any text written to standard out pipe. 
-  #### --feature_lr
-  Spherical harmonics features learning rate, ```0.0025``` by default.
-  #### --opacity_lr
-  Opacity learning rate, ```0.05``` by default.
-  #### --scaling_lr
-  Scaling learning rate, ```0.005``` by default.
-  #### --rotation_lr
-  Rotation learning rate, ```0.001``` by default.
-  #### --position_lr_max_steps
-  Number of steps (from 0) where position learning rate goes from ```initial``` to ```final```. ```30_000``` by default.
-  #### --position_lr_init
-  Initial 3D position learning rate, ```0.00016``` by default.
-  #### --position_lr_final
-  Final 3D position learning rate, ```0.0000016``` by default.
-  #### --position_lr_delay_mult
-  Position learning rate multiplier (cf. Plenoxels), ```0.01``` by default. 
-  #### --densify_from_iter
-  Iteration where densification starts, ```500``` by default. 
-  #### --densify_until_iter
-  Iteration where densification stops, ```15_000``` by default.
-  #### --densify_grad_threshold
-  Limit that decides if points should be densified based on 2D position gradient, ```0.0002``` by default.
-  #### --densification_interval
-  How frequently to densify, ```100``` (every 100 iterations) by default.
-  #### --opacity_reset_interval
-  How frequently to reset opacity, ```3_000``` by default. 
-  #### --lambda_dssim
-  Influence of SSIM on total loss from 0 to 1, ```0.2``` by default. 
-  #### --percent_dense
-  Percentage of scene extent (0--1) a point must exceed to be forcibly densified, ```0.01``` by default.
-
-</details>
-<br>
-
-Note that similar to MipNeRF360 and vanilla 3DGS, we target images at resolutions in the 1-1.6K pixel range. For convenience, arbitrary-size inputs can be passed and will be automatically resized if their width exceeds 1600 pixels. We recommend to keep this behavior, but you may force training to use your higher-resolution images by setting ```-r 1```.
-
-## 🎬 Interactive Viewers
-
-Our 3DGS representation is identical to vanilla 3DGS, so you can use the official [SIBR viewer](https://github.com/graphdeco-inria/gaussian-splatting?tab=readme-ov-file#interactive-viewers) for interactive visualization. For a quick start without local setup, try the web-based [Supersplat](https://superspl.at/editor).
-
-## 🎯 Quick Facts
-
-| Feature | FastGS | Previous Methods |
-|---------|---------|---------------------|
-| Training Time | **100 seconds** | 5-30 minutes |
-| Gaussian Efficiency | ✅ **Strict Control** | ❌ Redundant Growth |
-| Memory Usage | ✅ **Low Footprint** | ❌ High Demand |
-| Task Versatility | ✅ **6 Domains** | ❌ Limited Scope |
-
-## 📧 Contact
-
-If you have any questions, please contact us at **renshiwei@mail.nankai.edu.cn**.
-
-
-## 🙏 Acknowledgements
-
-This project is built upon [3DGS](https://github.com/graphdeco-inria/gaussian-splatting), [Taming-3DGS](https://github.com/humansensinglab/taming-3dgs), [Speedy-Splat](https://github.com/j-alex-hanson/speedy-splat), and [Abs-GS](https://github.com/TY424/AbsGS). We extend our gratitude to all the authors for their outstanding contributions and excellent repositories!
-
-**License**: Please adhere to the licenses of 3DGS, Taming-3DGS, and Speedy-Splat.
-
-Special thanks to the authors of [DashGaussian](https://github.com/YouyuChen0207/DashGaussian) for their generous support!
-
-
-## Citation
-If you find this repo useful, please cite:
-```
-@article{ren2025fastgs,
-  title={FastGS: Training 3D Gaussian Splatting in 100 Seconds},
-  author={Ren, Shiwei and Wen, Tianci and Fang, Yongchun and Lu, Biao},
-  journal={arXiv preprint arXiv:2511.04283},
-  year={2025}
-}
-
+python train.py \
+  -s ~/hab-data/tandt/truck \
+  -m ~/hab-runs/truck_fastgs_s0 \
+  --eval --iterations 30000 --seed 0 \
+  --densification_interval 500 --optimizer_type default \
+  --test_iterations 30000 --save_iterations 30000 \
+  --highfeature_lr 0.04 --grad_abs_thresh 0.0009 --mult 0.7
 ```
 
----
+从最终 PLY 或 `hab_stats.csv` 读取 FastGS seed-0 Gaussian 数 `N_base`，并计算：
 
-<div align="center">
+```text
+target = floor(0.82 * N_base)
+```
 
-**⭐ If FastGS helps your research, please consider starring this repository!**
+### 2. 训练冻结 HAB 配置
 
-*FastGS: Training 3D Gaussian Splatting in 100 Seconds*
+```bash
+python train.py \
+  -s ~/hab-data/tandt/truck \
+  -m ~/hab-runs/truck_hab_s0 \
+  --eval --iterations 30000 --seed 0 \
+  --densification_interval 500 --optimizer_type default \
+  --test_iterations 30000 --save_iterations 30000 \
+  --highfeature_lr 0.04 --grad_abs_thresh 0.0009 --mult 0.7 \
+  --hab_mode gaussian_budget \
+  --hab_target_gaussians <TARGET_FROM_FASTGS_SEED0> \
+  --hab_priority_mode opacity_only \
+  --hab_prune_placement pre_densify \
+  --hab_budget_schedule per_event \
+  --hab_exact_final_count
+```
 
-</div>
+正式多 seed 实验必须复用同一个场景 seed-0 target，不能为每个 seed 重新计算目标。
 
----
+## 渲染与统一评测
+
+```bash
+# 生成严格 test renders / GT
+python render.py -m ~/hab-runs/truck_hab_s0 \
+  --iteration 30000 --skip_train --quiet --mult 0.7
+
+# 统一 FastGS PSNR / SSIM / VGG-LPIPS；文件名集合或分辨率不一致会直接失败
+python benchmark/unified_metrics.py \
+  --renders ~/hab-runs/truck_hab_s0/test/ours_30000/renders \
+  --gt ~/hab-runs/truck_hab_s0/test/ours_30000/gt \
+  --output ~/hab-runs/truck_hab_s0/unified_metrics.json \
+  --tag truck_hab_s0
+
+# 同步 native FPS，正式口径为 3 warmup + 30 measured passes
+python benchmark/benchmark_sync_fps.py \
+  -m ~/hab-runs/truck_hab_s0 --renderer fastgs --iteration 30000 \
+  --mult 0.7 --warmup_repeats 3 --measure_repeats 30 \
+  --output_json ~/hab-runs/truck_hab_s0/benchmark_sync_fps.json --quiet
+```
+
+## 主要参数
+
+| 参数 | 默认值 | 说明 |
+|---|---:|---|
+| `--hab_mode` | `off` | `off` 保持原始 FastGS；正式 HAB 使用 `gaussian_budget` |
+| `--hab_target_gaussians` | `0` | 场景固定 Gaussian 预算 |
+| `--hab_budget_start_iter` | `500` | 开始施加预算的 iteration |
+| `--hab_max_prune_fraction` | `0.10` | 单次事件最多裁剪当前点数比例 |
+| `--hab_priority_mode` | `joint` | 正式冻结配置必须显式设为 `opacity_only` |
+| `--hab_prune_placement` | `pre_densify` | 预算裁剪相对 densification 的位置 |
+| `--hab_budget_schedule` | `per_event` | `per_event / ramp / final_only / at_end` |
+| `--hab_exact_final_count` | false | 正式运行必须启用精确最终点数 |
+| `--hab_log_interval` | `500` | `hab_stats.csv` 记录间隔 |
+
+HAB 参数默认关闭，不传任何 `--hab_*` 参数时保持 FastGS baseline 行为。
+
+## 仓库结构
+
+```text
+.
+├── arguments/                  # HAB CLI 参数
+├── scene/gaussian_model.py     # 预算候选、排序与精确裁剪
+├── train.py                    # 控制器、seed、日志与调度
+├── gaussian_renderer/          # FastGS rasterizer 接口与负载统计
+├── benchmark/
+│   ├── unified_metrics.py      # 统一 PSNR/SSIM/LPIPS
+│   └── benchmark_sync_fps.py   # 同步 render-only FPS
+└── docs/experiments/           # 协议、正式表格、失败账本、哈希清单
+```
+
+## 可复现记录
+
+- [`SUBMISSION_EXPERIMENT_REPORT.md`](docs/experiments/SUBMISSION_EXPERIMENT_REPORT.md)：独立投稿实验报告。
+- [`EXPERIMENT_PROTOCOL.md`](docs/experiments/EXPERIMENT_PROTOCOL.md)：冻结前选择、确认门槛与统一评测协议。
+- [`FORMAL_MAIN_V4.md`](docs/experiments/FORMAL_MAIN_V4.md)：FastGS/HAB 正式主表。
+- [`FORMAL_THIRDPARTY_COMPARISON.md`](docs/experiments/FORMAL_THIRDPARTY_COMPARISON.md)：4 场景 × 8 方法统一表。
+- [`FORMAL_MECHANISMS_V4.md`](docs/experiments/FORMAL_MECHANISMS_V4.md)：构造基线、恢复窗口、Pareto 和 load sensitivity。
+- [`FAILURE_LEDGER.md`](docs/experiments/FAILURE_LEDGER.md)：失败、OOM 恢复、排除规则和可用性边界。
+- [`ARTIFACT_SHA256SUMS.txt`](docs/experiments/ARTIFACT_SHA256SUMS.txt)：全部紧凑记录的 SHA-256 清单。
+
+## 局限
+
+- 正式统计确认域只有四个场景，不能外推为所有 3DGS 数据分布上的普适结论。
+- 当前主方法本质上仍是 Gaussian-count budget；`num_rendered / num_buckets` 是负载代理，尚未形成 tile-list/FPS 闭环。
+- LPIPS 预注册上界失败，说明 opacity-only 预算不包含显式感知质量保护。
+- 减少 Gaussian 数不保证任意场景、任意 rasterizer 都按同比例提升 FPS。
+- 跨方法 wall time 包含各仓库自身流程差异，只作完整官方调用的描述性比较。
+
+## 致谢与许可
+
+本项目建立在 [FastGS](https://github.com/fastgs/FastGS) 和原始 [3D Gaussian Splatting](https://github.com/graphdeco-inria/gaussian-splatting) 代码基础上。请同时遵守 [`LICENSE`](LICENSE) 与 [`LICENSE_ORIGINAL.md`](LICENSE_ORIGINAL.md)，并在学术使用时引用对应上游论文。
+
+HAB-FastGS 的实验记录冻结于 2026-08-03；仓库中的数值均来自同一 RTX 3080 20 GB、WSL-Ubuntu 和 FastGS 统一评测口径。

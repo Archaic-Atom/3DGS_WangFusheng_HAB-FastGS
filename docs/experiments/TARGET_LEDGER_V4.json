@@ -1,0 +1,116 @@
+{
+  "generated_utc": "2026-08-03T01:41:04.509508+00:00",
+  "freeze_id": "20260803-opacity-per-event-82-v4",
+  "profile": {
+    "hab_mode": "fixed_budget",
+    "priority": "opacity_only",
+    "schedule": "per_event",
+    "ratio": 0.82
+  },
+  "rows": [
+    {
+      "scene": "truck",
+      "role": "development",
+      "ratio": 0.82,
+      "baseline_seed0_gaussians": null,
+      "target_gaussians": 207698,
+      "expected_views": 32,
+      "source_kind": "accepted_development_selection_target",
+      "source_run_id": "dev-selection-v2-20260803T0736CST",
+      "source_csv": "/mnt/h/WorkSpace/HAB-FastGS/paper_artifacts/records/DEV_SELECTION_V2.json",
+      "source_csv_sha256": "c74fc849ff3f5d7c6246f73f8f4d4ec69996ff93ed38928d3945a8775f72a724",
+      "baseline_ply_sha256": null
+    },
+    {
+      "scene": "playroom",
+      "role": "development",
+      "ratio": 0.82,
+      "baseline_seed0_gaussians": null,
+      "target_gaussians": 150170,
+      "expected_views": 29,
+      "source_kind": "accepted_development_selection_target",
+      "source_run_id": "dev-selection-v2-20260803T0736CST",
+      "source_csv": "/mnt/h/WorkSpace/HAB-FastGS/paper_artifacts/records/DEV_SELECTION_V2.json",
+      "source_csv_sha256": "c74fc849ff3f5d7c6246f73f8f4d4ec69996ff93ed38928d3945a8775f72a724",
+      "baseline_ply_sha256": null
+    },
+    {
+      "scene": "train",
+      "role": "confirmation",
+      "ratio": 0.82,
+      "baseline_seed0_gaussians": 230899,
+      "target_gaussians": 189337,
+      "expected_views": 38,
+      "source_kind": "accepted_v4_seed0_fastgs_collector",
+      "source_run_id": "formal-v4-train-fastgs-s0-r1",
+      "source_csv": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/formal-v4-train-fastgs-s0-r1/fastgs_formal.csv",
+      "source_csv_sha256": "c134b912f4135f7e90977de2de9ce73bfd1beb280b477311aae1c1bb8ff1b613",
+      "baseline_ply_sha256": "a8743cc5c5483131003e77def0500a44e49b10facb7d7af3e18229cd8150a732"
+    },
+    {
+      "scene": "drjohnson",
+      "role": "confirmation",
+      "ratio": 0.82,
+      "baseline_seed0_gaussians": 253655,
+      "target_gaussians": 207997,
+      "expected_views": 33,
+      "source_kind": "accepted_v4_seed0_fastgs_collector",
+      "source_run_id": "formal-v4-drjohnson-fastgs-s0-r1",
+      "source_csv": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/formal-v4-drjohnson-fastgs-s0-r1/fastgs_formal.csv",
+      "source_csv_sha256": "423547bff6aa07f922810171b112ebd03db2225404581966b2f802d1cf1239c7",
+      "baseline_ply_sha256": "97d27abb2fdec8779d721d81ee05c16e811ae19434a0c455d5c4a168e5b70fb8"
+    },
+    {
+      "scene": "garden",
+      "role": "confirmation",
+      "ratio": 0.82,
+      "baseline_seed0_gaussians": 740149,
+      "target_gaussians": 606922,
+      "expected_views": 24,
+      "source_kind": "accepted_v4_seed0_fastgs_collector",
+      "source_run_id": "formal-v4-garden-fastgs-s0-r1",
+      "source_csv": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/formal-v4-garden-fastgs-s0-r1/fastgs_formal.csv",
+      "source_csv_sha256": "9d8e9b4621986257cf538a5949da3f9abd928b1349304f3937744459436d047a",
+      "baseline_ply_sha256": "5fac2d7e4ababc07d7743ce7e73fbdf61d3d8254bd34dfe3ddc926dbeb7bd6be"
+    },
+    {
+      "scene": "room",
+      "role": "confirmation",
+      "ratio": 0.82,
+      "baseline_seed0_gaussians": 207962,
+      "target_gaussians": 170528,
+      "expected_views": 39,
+      "source_kind": "accepted_v4_seed0_fastgs_collector",
+      "source_run_id": "formal-v4-room-fastgs-s0-r1",
+      "source_csv": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/formal-v4-room-fastgs-s0-r1/fastgs_formal.csv",
+      "source_csv_sha256": "5e4a7e248182a69675100a588576eee65a37c635d5adc46c69930664266ef632",
+      "baseline_ply_sha256": "e908a85f8686f7521ad304874126ef7b2ee7107831b1028fdb19e0794d4809f2"
+    },
+    {
+      "scene": "bicycle",
+      "role": "extension",
+      "ratio": 0.82,
+      "baseline_seed0_gaussians": 538989,
+      "target_gaussians": 441970,
+      "expected_views": 25,
+      "source_kind": "accepted_v4_seed0_fastgs_collector",
+      "source_run_id": "formal-v4-bicycle-fastgs-s0-r1",
+      "source_csv": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/formal-v4-bicycle-fastgs-s0-r1/fastgs_formal.csv",
+      "source_csv_sha256": "76e3b2d13da43df4ada9e8a63571413ff384d9f0542e59de30eab0567892661c",
+      "baseline_ply_sha256": "d7ebb41902097617400f40515a678cbd0225b053384f2425ff2a4f0d3e8744ae"
+    },
+    {
+      "scene": "counter",
+      "role": "extension",
+      "ratio": 0.82,
+      "baseline_seed0_gaussians": 208314,
+      "target_gaussians": 170817,
+      "expected_views": 30,
+      "source_kind": "accepted_v4_seed0_fastgs_collector",
+      "source_run_id": "formal-v4-counter-fastgs-s0-r1",
+      "source_csv": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/formal-v4-counter-fastgs-s0-r1/fastgs_formal.csv",
+      "source_csv_sha256": "badff44297c95a67d988c3e5a6a83e4b76a076b68666fb25c3f5fd0dc0104300",
+      "baseline_ply_sha256": "939a70e1fce388f3977d54147c27c4332f1f260c35d10ad6b32c8e8e325aaa06"
+    }
+  ]
+}

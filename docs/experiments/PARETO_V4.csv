@@ -1,0 +1,9 @@
+scene,ratio,gaussians,psnr,ssim,lpips,train_wall_s,fps_mean,fps_evidence
+truck,1.0,254219,25.82096564769745,0.8771606758236885,0.1765315318480134,224.26,394.5272031558278,/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_truck.json
+truck,0.9,227961,25.81924343109131,0.8758074101060629,0.18047564895823598,218.35,405.962388501732,/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_truck.json
+truck,0.82,207698,25.80791437625885,0.8739033434540033,0.18629798386245966,209.02,412.0233799163874,/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_truck.json
+truck,0.7,177303,25.600474536418915,0.8675633016973734,0.20037549873813987,210.01,420.27036553609986,/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_truck.json
+playroom,1.0,181184,30.616140365600586,0.9109657324593643,0.26138490952294446,204.14,436.5118902494775,/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_playroom.json
+playroom,0.9,164821,30.645773854748956,0.9092970284922369,0.2630701393916689,192.08,446.53744802674254,/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_playroom.json
+playroom,0.82,150170,30.12344873362574,0.9091149157491224,0.26594344603604286,212.71,443.0571201297215,/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_playroom.json
+playroom,0.7,128194,30.248115934174635,0.9070495593136755,0.2688066353057993,185.08,449.75685910692926,/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_playroom.json

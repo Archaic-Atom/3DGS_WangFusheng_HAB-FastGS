@@ -68,6 +68,11 @@ class GaussianModel:
         self.shoptimizer = None
         self.percent_dense = 0
         self.spatial_lr_scale = 0
+        self.last_hab_stats = {}
+        # Pruning may be invoked outside a densification event (for example the
+        # explicit 30k placement ablation), so the optional radii cache must
+        # exist from construction rather than being created lazily.
+        self.tmp_radii = None
         self.setup_functions()
 
     def capture(self, optimizer_type):
@@ -465,7 +470,89 @@ class GaussianModel:
 
         self.densification_postfix(new_xyz, new_features_dc, new_features_rest, new_opacities, new_scaling, new_rotation, new_tmp_radii)
 
-    def densify_and_prune_fastgs(self, max_screen_size, min_opacity, extent, radii, args, importance_score = None, pruning_score = None):
+    def _filter_hab_vector(self, value, keep_mask):
+        if value is None or keep_mask is None:
+            return value
+        value = value.reshape(-1)
+        if value.shape[0] != keep_mask.shape[0]:
+            return value
+        return value[keep_mask]
+
+    def _hab_prune_to_budget(self, target_count, max_prune_fraction, pruning_score, min_opacity,
+                             priority_mode="joint"):
+        """Prune the Gaussian set down towards ``target_count``.
+
+        ``priority_mode`` selects which signals form the pruning priority. The
+        default ``joint`` mode is the HAB-FastGS priority
+        ``p_i = q_hat_i + 0.5(1-alpha_i) + 0.25 r_hat_i``. The remaining modes
+        exist purely as constructed baselines: each one keeps the budget, the
+        prune fraction and the trigger schedule identical while degrading the
+        priority to a single signal (or to random choice), so that the
+        necessity of the joint priority can be falsified rather than assumed.
+        """
+        current_count = self.get_xyz.shape[0]
+        excess = current_count - target_count
+        if target_count <= 0 or excess <= 0 or max_prune_fraction <= 0:
+            return 0, None
+
+        prune_budget = min(excess, max(1, int(current_count * max_prune_fraction)))
+        device = self.get_xyz.device
+        priority = torch.zeros((current_count), dtype=torch.float32, device=device)
+        eligible = torch.ones((current_count), dtype=torch.bool, device=device)
+
+        use_score = priority_mode in ("joint", "score_only")
+        use_opacity = priority_mode in ("joint", "opacity_only")
+        use_radii = priority_mode in ("joint", "radii_only")
+
+        # Eligibility is derived from the pruning score in every mode, including
+        # the degraded ones, so all constructed baselines draw from the same
+        # candidate pool and only the ranking differs.
+        valid_count = 0
+        if pruning_score is not None and pruning_score.numel() > 0:
+            score = pruning_score.detach().float().reshape(-1).to(device)
+            valid_count = min(score.shape[0], current_count)
+            valid_score = torch.nan_to_num(score[:valid_count], nan=0.0, posinf=1.0, neginf=0.0)
+            score_range = torch.max(valid_score) - torch.min(valid_score)
+            if use_score and score_range.item() > 1e-8:
+                priority[:valid_count] += (valid_score - torch.min(valid_score)) / score_range
+
+            eligible[:] = False
+            eligible[:valid_count] = True
+            if valid_count < prune_budget:
+                eligible[:] = True
+
+        opacities = self.get_opacity.detach().float().reshape(-1)
+        if opacities.shape[0] == current_count:
+            if use_opacity:
+                priority += 0.5 * (1.0 - torch.clamp(opacities, 0.0, 1.0))
+            eligible = torch.logical_or(eligible, opacities < min_opacity)
+
+        if use_radii and self.max_radii2D.shape[0] == current_count:
+            radii_cost = self.max_radii2D.detach().float()
+            max_radius = torch.max(radii_cost)
+            if max_radius.item() > 0:
+                priority += 0.25 * torch.clamp(radii_cost / (max_radius + 1e-6), 0.0, 1.0)
+
+        if priority_mode == "random":
+            # Uniform random ranking over the same eligible pool. Draws from the
+            # global torch RNG, which train.py seeds explicitly.
+            priority = torch.rand((current_count), dtype=torch.float32, device=device)
+
+        priority[~eligible] = -float("inf")
+        available = int(torch.isfinite(priority).sum().item())
+        if available <= 0:
+            return 0, None
+
+        prune_budget = min(prune_budget, available)
+        selected_indices = torch.topk(priority, prune_budget, largest=True).indices
+        budget_prune_mask = torch.zeros((current_count), dtype=torch.bool, device=device)
+        budget_prune_mask[selected_indices] = True
+        pruned = int(torch.sum(budget_prune_mask).item())
+        keep_mask = ~budget_prune_mask
+        self.prune_points(budget_prune_mask)
+        return pruned, keep_mask
+
+    def densify_and_prune_fastgs(self, max_screen_size, min_opacity, extent, radii, args, importance_score = None, pruning_score = None, current_iteration = None):
         
         ''' 
             Densification and Pruning based on FastGS criteria:
@@ -474,6 +561,47 @@ class GaussianModel:
                 This is our main contribution compared to the vanilla 3DGS.
             3.  Finally, gaussians with low opacity or very large size are pruned.
         '''
+        stats = {
+            "before_count": int(self.get_xyz.shape[0]),
+            "after_count": int(self.get_xyz.shape[0]),
+            "clone_candidates": 0,
+            "split_candidates": 0,
+            "baseline_prune_candidates": 0,
+            "baseline_pruned": 0,
+            "hab_budget_pruned": 0,
+        }
+
+        self.tmp_radii = radii
+        hab_mode = getattr(args, "hab_mode", "off")
+        target_count = int(getattr(args, "hab_current_target_gaussians", 0) or 0)
+        if target_count <= 0:
+            target_count = int(getattr(args, "hab_target_gaussians", 0) or 0)
+        budget_start_iter = int(getattr(args, "hab_budget_start_iter", 0) or 0)
+        max_prune_fraction = float(getattr(args, "hab_max_prune_fraction", 0.0) or 0.0)
+        priority_mode = getattr(args, "hab_priority_mode", "joint")
+        placement = getattr(args, "hab_prune_placement", "pre_densify")
+        schedule = getattr(args, "hab_budget_schedule", "per_event")
+
+        # "final_only" defers all budget enforcement to a single pass at the end
+        # of training, which is the constructed baseline for "in-training budget
+        # control has no value over pruning once at the end".
+        budget_active = (
+            hab_mode != "off"
+            and target_count > 0
+            and schedule not in ("final_only", "at_end")
+            and (current_iteration is None or current_iteration >= budget_start_iter)
+        )
+
+        if budget_active and placement == "pre_densify":
+            hab_pruned, keep_mask = self._hab_prune_to_budget(
+                target_count, max_prune_fraction, pruning_score, min_opacity, priority_mode
+            )
+            stats["hab_budget_pruned"] = hab_pruned
+            importance_score = self._filter_hab_vector(importance_score, keep_mask)
+            pruning_score = self._filter_hab_vector(pruning_score, keep_mask)
+            if keep_mask is not None and self.tmp_radii is not None:
+                radii = self.tmp_radii
+
         grad_vars = self.xyz_gradient_accum / self.denom
         grad_vars[grad_vars.isnan()] = 0.0
         self.tmp_radii = radii
@@ -491,7 +619,15 @@ class GaussianModel:
 
         # This is our multi-view consisent metric for densification
         # We use this metric to further filter the candidates for densification, which is similar to taming 3dgs.
-        metric_mask = importance_score > 5
+        if importance_score is None:
+            metric_mask = torch.zeros_like(all_clones)
+        else:
+            metric_mask = torch.zeros_like(all_clones)
+            valid_count = min(importance_score.reshape(-1).shape[0], metric_mask.shape[0])
+            metric_mask[:valid_count] = importance_score.reshape(-1)[:valid_count] > 5
+
+        stats["clone_candidates"] = int(torch.sum(torch.logical_and(metric_mask, all_clones)).item())
+        stats["split_candidates"] = int(torch.sum(torch.logical_and(metric_mask, all_splits)).item())
 
         self.densify_and_clone_fastgs(metric_mask, all_clones)
         self.densify_and_split_fastgs(metric_mask, all_splits)
@@ -502,21 +638,40 @@ class GaussianModel:
             big_points_ws = self.get_scaling.max(dim=1).values > 0.1 * extent
             prune_mask = torch.logical_or(torch.logical_or(prune_mask, big_points_vs), big_points_ws)
 
-        scores = 1 - pruning_score 
+        if pruning_score is None:
+            scores = torch.zeros((self.get_xyz.shape[0]), dtype=torch.float32, device=self.get_xyz.device)
+        else:
+            score = torch.nan_to_num(pruning_score.detach().reshape(-1).to(self.get_xyz.device), nan=0.0, posinf=1.0, neginf=0.0)
+            scores = 1 - score
         to_remove = torch.sum(prune_mask)
         remove_budget = int(0.5 * to_remove)
+        stats["baseline_prune_candidates"] = int(to_remove.item())
 
         # The budget is not necessary for our method.
         if remove_budget:
             n_init_points = self.get_xyz.shape[0]
-            padded_importance = torch.zeros((n_init_points), dtype=torch.float32)
-            padded_importance[:scores.shape[0]] = 1 / (1e-6 + scores.squeeze())
+            padded_importance = torch.zeros((n_init_points), dtype=torch.float32, device=self.get_xyz.device)
+            valid_count = min(scores.reshape(-1).shape[0], n_init_points)
+            padded_importance[:valid_count] = 1 / (1e-6 + scores.reshape(-1)[:valid_count])
             selected_pts_mask = torch.zeros_like(padded_importance, dtype=bool, device="cuda")
-            sampled_indices = torch.multinomial(padded_importance, remove_budget, replacement=False)
-            selected_pts_mask[sampled_indices] = True
-            final_prune = torch.logical_and(prune_mask, selected_pts_mask)
-            self.prune_points(final_prune)
-        
+            if torch.sum(padded_importance).item() > 0:
+                sampled_indices = torch.multinomial(padded_importance, min(remove_budget, n_init_points), replacement=False)
+                selected_pts_mask[sampled_indices] = True
+                final_prune = torch.logical_and(prune_mask, selected_pts_mask)
+                stats["baseline_pruned"] = int(torch.sum(final_prune).item())
+                self.prune_points(final_prune)
+
+        # Constructed baseline: enforce the budget *after* clone/split instead of
+        # before it. The pruning-score vector is now stale with respect to the
+        # expanded Gaussian set, which is exactly the index-consistency hazard
+        # that motivated moving the budget prune earlier. Running it here makes
+        # that hazard measurable rather than asserted.
+        if budget_active and placement == "post_densify":
+            hab_pruned, _ = self._hab_prune_to_budget(
+                target_count, max_prune_fraction, pruning_score, min_opacity, priority_mode
+            )
+            stats["hab_budget_pruned"] = hab_pruned
+
         opacities_new = inverse_sigmoid(torch.min(self.get_opacity, torch.ones_like(self.get_opacity)*0.8))
         optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")
         self._opacity = optimizable_tensors["opacity"]
@@ -524,17 +679,60 @@ class GaussianModel:
         self.tmp_radii = None
 
         torch.cuda.empty_cache()
+        stats["after_count"] = int(self.get_xyz.shape[0])
+        self.last_hab_stats = stats
+        return stats
 
     def add_densification_stats(self, viewspace_point_tensor, update_filter):
         self.xyz_gradient_accum[update_filter] += torch.norm(viewspace_point_tensor.grad[update_filter,:2], dim=-1, keepdim=True)
         self.xyz_gradient_accum_abs[update_filter] += torch.norm(viewspace_point_tensor.grad[update_filter, 2:], dim=-1, keepdim=True)
         self.denom[update_filter] += 1
 
-    def final_prune_fastgs(self, min_opacity, pruning_score = None):
+    def final_prune_fastgs(self, min_opacity, pruning_score = None, min_keep = 0,
+                           return_keep_mask = False):
         """Final-stage pruning: remove Gaussians based on opacity and multi-view consistency.
         In the final stage we remove Gaussians that have low opacity or that are flagged by
         our multi-view reconstruction consistency metric (provided as `pruning_score`)."""
+        before_count = int(self.get_xyz.shape[0])
         prune_mask = (self.get_opacity < min_opacity).squeeze() 
-        scores_mask = pruning_score > 0.9
+        scores_mask = torch.zeros_like(prune_mask)
+        if pruning_score is not None and pruning_score.numel() > 0:
+            score = torch.nan_to_num(pruning_score.detach().reshape(-1).to(prune_mask.device), nan=0.0, posinf=1.0, neginf=0.0)
+            valid_count = min(score.shape[0], scores_mask.shape[0])
+            scores_mask[:valid_count] = score[:valid_count] > 0.9
         final_prune = torch.logical_or(prune_mask, scores_mask)
+
+        # Budget floor. This late-stage prune is quality-driven and unaware of
+        # any Gaussian budget, so on some scenes it finishes below the requested
+        # count and on others above it. Either way the ablation arms end up at
+        # different primitive counts, and quality gaps between them become partly
+        # count gaps. When min_keep is set we spare the highest-opacity flagged
+        # Gaussians: among primitives already flagged for removal, opacity is the
+        # direct measure of how much rendered energy their removal costs.
+        skipped_for_floor = 0
+        if min_keep > 0:
+            keep_after = before_count - int(torch.sum(final_prune).item())
+            if keep_after < min_keep:
+                cand_idx = torch.nonzero(final_prune, as_tuple=False).squeeze(-1)
+                if cand_idx.numel() > 0:
+                    deficit = min(min_keep - keep_after, int(cand_idx.numel()))
+                    cand_op = self.get_opacity.detach().reshape(-1)[cand_idx]
+                    spare = cand_idx[torch.argsort(cand_op, descending=True)[:deficit]]
+                    final_prune[spare] = False
+                    skipped_for_floor = int(spare.numel())
+
+        pruned = int(torch.sum(final_prune).item())
+        keep_mask = ~final_prune
         self.prune_points(final_prune)
+        stats = {
+            "before_count": before_count,
+            "after_count": int(self.get_xyz.shape[0]),
+            "baseline_prune_candidates": pruned + skipped_for_floor,
+            "baseline_pruned": pruned,
+            "hab_budget_pruned": 0,
+            "budget_floor_spared": skipped_for_floor,
+        }
+        self.last_hab_stats = stats
+        if return_keep_mask:
+            return stats, keep_mask
+        return stats

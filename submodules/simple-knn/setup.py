@@ -17,6 +17,7 @@ cxx_compiler_flags = []
 
 if os.name == 'nt':
     cxx_compiler_flags.append("/wd4624")
+    cxx_compiler_flags.append("/D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH")
 
 setup(
     name="simple_knn",
@@ -27,7 +28,7 @@ setup(
             "spatial.cu", 
             "simple_knn.cu",
             "ext.cpp"],
-            extra_compile_args={"nvcc": [], "cxx": cxx_compiler_flags})
+            extra_compile_args={"nvcc": ["-allow-unsupported-compiler", "-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"], "cxx": cxx_compiler_flags})
         ],
     cmdclass={
         'build_ext': BuildExtension

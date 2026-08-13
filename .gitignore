@@ -1,0 +1,47 @@
+# Python caches and build products
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+
+# Local environments and editor state
+.venv/
+venv/
+.conda/
+.idea/
+.vscode/
+.claude/
+.agents/
+
+# Datasets and generated model outputs
+datasets/
+data/
+output/
+outputs/
+logs/
+checkpoints/
+*.ckpt
+*.pth
+*.pt
+
+# Experiment runtime by-products
+/experiments/
+*.log
+*.pid
+*.stdout
+*.stderr
+wandb/
+runs/
+
+# Native extension build products
+submodules/**/build/
+submodules/**/*.egg-info/
+submodules/**/*.pyd
+submodules/**/*.so
+
+# OS files
+.DS_Store
+Thumbs.db

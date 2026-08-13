@@ -1,0 +1,604 @@
+{
+  "freeze_id": "20260803-opacity-per-event-82-v4",
+  "collector_rows": 34,
+  "fingerprints": {
+    "freeze_id": "20260803-opacity-per-event-82-v4",
+    "source_archive_sha256": "65ad508b6f0856bf1042ad15c47e23537af51a033ce10ae704868d32ab0824b2",
+    "execution_scripts_sha256": "8e06366ce9c0aeca2959fd8d698f1c5b75c63799da19fa731f5aa5595da2bbc2",
+    "conda_explicit_sha256": "b05e05f80bcc43d0907c5956a956c425ba6c840a3d8998022c3cd558851bd835",
+    "evaluator_sha256": "2ffc81ba62109b3b729dcc53ee7957e23f19f86a5fe8c4d3cd31d764cc1bf8a1"
+  },
+  "ablation": [
+    {
+      "scene": "truck",
+      "arm": "selected",
+      "gaussians": 207698,
+      "psnr": 25.80791437625885,
+      "ssim": 0.8739033434540033,
+      "lpips": 0.18629798386245966,
+      "train_wall_s": 209.02,
+      "fps_mean": 405.9347181691781,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_truck.json",
+      "delta_psnr": 0.0,
+      "delta_ssim": 0.0,
+      "delta_lpips": 0.0,
+      "wall_delta_percent": 0.0,
+      "fps_delta_vs_selected_percent": 0.0,
+      "fps_ci95_percent": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "scene": "truck",
+      "arm": "joint",
+      "gaussians": 207698,
+      "psnr": 25.569226443767548,
+      "ssim": 0.8725197743624449,
+      "lpips": 0.18680794443935156,
+      "train_wall_s": 210.43,
+      "fps_mean": 406.305188856468,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_truck.json",
+      "delta_psnr": -0.2386879324913025,
+      "delta_ssim": -0.0013835690915584564,
+      "delta_lpips": 0.0005099605768918991,
+      "wall_delta_percent": 0.6745765955410876,
+      "fps_delta_vs_selected_percent": 0.5405629278095372,
+      "fps_ci95_percent": [
+        -3.120037623462206,
+        4.512866689201187
+      ]
+    },
+    {
+      "scene": "truck",
+      "arm": "score",
+      "gaussians": 207698,
+      "psnr": 20.25425273180008,
+      "ssim": 0.723335262387991,
+      "lpips": 0.3854700494557619,
+      "train_wall_s": 168.57,
+      "fps_mean": 442.82692720457595,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_truck.json",
+      "delta_psnr": -5.553661644458771,
+      "delta_ssim": -0.15056808106601238,
+      "delta_lpips": 0.19917206559330225,
+      "wall_delta_percent": -19.352215099033586,
+      "fps_delta_vs_selected_percent": 9.765557094999615,
+      "fps_ci95_percent": [
+        5.034263551250888,
+        14.482929342091415
+      ]
+    },
+    {
+      "scene": "truck",
+      "arm": "radii",
+      "gaussians": 207698,
+      "psnr": 20.394310414791107,
+      "ssim": 0.7259670067578554,
+      "lpips": 0.3868544101715088,
+      "train_wall_s": 185.76,
+      "fps_mean": 445.77227648322076,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_truck.json",
+      "delta_psnr": -5.413603961467743,
+      "delta_ssim": -0.14793633669614792,
+      "delta_lpips": 0.20055642630904913,
+      "wall_delta_percent": -11.128121710841077,
+      "fps_delta_vs_selected_percent": 10.576842704626717,
+      "fps_ci95_percent": [
+        5.950468321219143,
+        15.127537977941845
+      ]
+    },
+    {
+      "scene": "truck",
+      "arm": "random",
+      "gaussians": 207698,
+      "psnr": 25.242689609527588,
+      "ssim": 0.8642174415290356,
+      "lpips": 0.2034478047862649,
+      "train_wall_s": 188.35,
+      "fps_mean": 424.3549975258559,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_truck.json",
+      "delta_psnr": -0.5652247667312622,
+      "delta_ssim": -0.009685901924967766,
+      "delta_lpips": 0.017149820923805237,
+      "wall_delta_percent": -9.889005836762044,
+      "fps_delta_vs_selected_percent": 5.288451880903444,
+      "fps_ci95_percent": [
+        0.9518410830046544,
+        9.549706428944038
+      ]
+    },
+    {
+      "scene": "truck",
+      "arm": "post",
+      "gaussians": 207698,
+      "psnr": 25.736784517765045,
+      "ssim": 0.8738141115754843,
+      "lpips": 0.18566025467589498,
+      "train_wall_s": 214.62,
+      "fps_mean": 407.5003594285955,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_truck.json",
+      "delta_psnr": -0.07112985849380493,
+      "delta_ssim": -8.923187851905823e-05,
+      "delta_lpips": -0.0006377291865646839,
+      "wall_delta_percent": 2.679169457468178,
+      "fps_delta_vs_selected_percent": 0.9975305947191141,
+      "fps_ci95_percent": [
+        -3.034782174172481,
+        4.933565314955867
+      ]
+    },
+    {
+      "scene": "truck",
+      "arm": "final",
+      "gaussians": 207698,
+      "psnr": 25.59876251220703,
+      "ssim": 0.8705559950321913,
+      "lpips": 0.1906918128952384,
+      "train_wall_s": 224.01,
+      "fps_mean": 405.8187339346881,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_truck.json",
+      "delta_psnr": -0.20915186405181885,
+      "delta_ssim": -0.0033473484218120575,
+      "delta_lpips": 0.00439382903277874,
+      "wall_delta_percent": 7.171562529901432,
+      "fps_delta_vs_selected_percent": 0.30840157690074804,
+      "fps_ci95_percent": [
+        -2.7358511027102828,
+        3.2788632355519076
+      ]
+    },
+    {
+      "scene": "playroom",
+      "arm": "selected",
+      "gaussians": 150170,
+      "psnr": 30.12344873362574,
+      "ssim": 0.9091149157491224,
+      "lpips": 0.26594344603604286,
+      "train_wall_s": 212.71,
+      "fps_mean": 416.6806409189426,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_playroom.json",
+      "delta_psnr": 0.0,
+      "delta_ssim": 0.0,
+      "delta_lpips": 0.0,
+      "wall_delta_percent": 0.0,
+      "fps_delta_vs_selected_percent": 0.0,
+      "fps_ci95_percent": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "scene": "playroom",
+      "arm": "joint",
+      "gaussians": 150170,
+      "psnr": 30.392726437798864,
+      "ssim": 0.9095264200506539,
+      "lpips": 0.2663425798046178,
+      "train_wall_s": 190.68,
+      "fps_mean": 430.2613049223992,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_playroom.json",
+      "delta_psnr": 0.269277704173124,
+      "delta_ssim": 0.00041150430153147344,
+      "delta_lpips": 0.0003991337685749219,
+      "wall_delta_percent": -10.356823844671148,
+      "fps_delta_vs_selected_percent": 3.649620491856112,
+      "fps_ci95_percent": [
+        0.6340514049070695,
+        6.8261242173373775
+      ]
+    },
+    {
+      "scene": "playroom",
+      "arm": "score",
+      "gaussians": 150170,
+      "psnr": 22.42597803576239,
+      "ssim": 0.8520404470377955,
+      "lpips": 0.3408599629484374,
+      "train_wall_s": 180.17,
+      "fps_mean": 445.44795989080563,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_playroom.json",
+      "delta_psnr": -7.6974706978633485,
+      "delta_ssim": -0.05707446871132693,
+      "delta_lpips": 0.07491651691239454,
+      "wall_delta_percent": -15.297823327535154,
+      "fps_delta_vs_selected_percent": 7.539804190331231,
+      "fps_ci95_percent": [
+        3.22654719399365,
+        11.75753991155342
+      ]
+    },
+    {
+      "scene": "playroom",
+      "arm": "radii",
+      "gaussians": 150170,
+      "psnr": 21.37088762480637,
+      "ssim": 0.8372865504231947,
+      "lpips": 0.34702705412075435,
+      "train_wall_s": 168.75,
+      "fps_mean": 449.91987279335234,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_playroom.json",
+      "delta_psnr": -8.752561108819368,
+      "delta_ssim": -0.07182836532592773,
+      "delta_lpips": 0.08108360808471149,
+      "wall_delta_percent": -20.6666353250905,
+      "fps_delta_vs_selected_percent": 8.696662708397254,
+      "fps_ci95_percent": [
+        4.1866580490057945,
+        13.289767598229563
+      ]
+    },
+    {
+      "scene": "playroom",
+      "arm": "random",
+      "gaussians": 150170,
+      "psnr": 30.327907956879713,
+      "ssim": 0.9077730240492985,
+      "lpips": 0.2703873535682415,
+      "train_wall_s": 190.75,
+      "fps_mean": 405.49373921403253,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_playroom.json",
+      "delta_psnr": 0.20445922325397348,
+      "delta_ssim": -0.001341891699823905,
+      "delta_lpips": 0.004443907532198643,
+      "wall_delta_percent": -10.323915189694887,
+      "fps_delta_vs_selected_percent": -1.9244330226782047,
+      "fps_ci95_percent": [
+        -6.744231252492267,
+        2.8968223215054825
+      ]
+    },
+    {
+      "scene": "playroom",
+      "arm": "post",
+      "gaussians": 150170,
+      "psnr": 30.291831312508418,
+      "ssim": 0.9089385147752433,
+      "lpips": 0.2659200630311308,
+      "train_wall_s": 185.86,
+      "fps_mean": 421.8546073019987,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_playroom.json",
+      "delta_psnr": 0.16838257888267805,
+      "delta_ssim": -0.00017640097387905396,
+      "delta_lpips": -2.338300491205869e-05,
+      "wall_delta_percent": -12.622819801607822,
+      "fps_delta_vs_selected_percent": 2.087525497685335,
+      "fps_ci95_percent": [
+        -1.831448248270946,
+        6.287628831750692
+      ]
+    },
+    {
+      "scene": "playroom",
+      "arm": "final",
+      "gaussians": 150170,
+      "psnr": 30.074249333348767,
+      "ssim": 0.9042408754085672,
+      "lpips": 0.268604875124734,
+      "train_wall_s": 204.68,
+      "fps_mean": 420.20016340944255,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/ablation_playroom.json",
+      "delta_psnr": -0.04919940027697223,
+      "delta_ssim": -0.0048740403405551636,
+      "delta_lpips": 0.0026614290886911585,
+      "wall_delta_percent": -3.7750928494193925,
+      "fps_delta_vs_selected_percent": 1.4771816141451235,
+      "fps_ci95_percent": [
+        -2.7256557040784113,
+        5.848265536593008
+      ]
+    }
+  ],
+  "recovery_30k_minus_27k": [
+    {
+      "scene": "truck",
+      "seed": 0,
+      "cut_27k_psnr": 25.59876251220703,
+      "cut_30k_psnr": 23.889028906822205,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/recovery_truck_seed0.json",
+      "delta_psnr": -1.7097336053848267,
+      "delta_ssim": -0.0247432179749012,
+      "delta_lpips": 0.014720648061484098,
+      "wall_delta_percent": 4.464086424713187,
+      "fps_delta_30k_vs_27k_percent": 0.09729283209822531,
+      "fps_ci95_percent": [
+        -3.3173020974464134,
+        3.7568630457462158
+      ]
+    },
+    {
+      "scene": "truck",
+      "seed": 1,
+      "cut_27k_psnr": 25.54649531841278,
+      "cut_30k_psnr": 23.846156060695648,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/recovery_truck_seed1.json",
+      "delta_psnr": -1.7003392577171326,
+      "delta_ssim": -0.022780518978834152,
+      "delta_lpips": 0.014636254869401455,
+      "wall_delta_percent": 5.861751152073724,
+      "fps_delta_30k_vs_27k_percent": -1.2854467426007037,
+      "fps_ci95_percent": [
+        -3.97880295367381,
+        1.6395353620302253
+      ]
+    },
+    {
+      "scene": "truck",
+      "seed": 2,
+      "cut_27k_psnr": 25.611757338047028,
+      "cut_30k_psnr": 23.785375237464905,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/recovery_truck_seed2.json",
+      "delta_psnr": -1.8263821005821228,
+      "delta_ssim": -0.02302614413201809,
+      "delta_lpips": 0.01455268170684576,
+      "wall_delta_percent": -4.774120613939747,
+      "fps_delta_30k_vs_27k_percent": -0.07155776888701165,
+      "fps_ci95_percent": [
+        -2.7779062450290652,
+        2.619008975745361
+      ]
+    },
+    {
+      "scene": "playroom",
+      "seed": 0,
+      "cut_27k_psnr": 30.074249333348767,
+      "cut_30k_psnr": 29.42049059374579,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/recovery_playroom_seed0.json",
+      "delta_psnr": -0.6537587396029778,
+      "delta_ssim": -0.004759459659971044,
+      "delta_lpips": 0.004980164869078263,
+      "wall_delta_percent": 10.728942739886648,
+      "fps_delta_30k_vs_27k_percent": 1.998976569661348,
+      "fps_ci95_percent": [
+        -1.9074533497208777,
+        6.066320675385376
+      ]
+    }
+  ],
+  "pareto": [
+    {
+      "scene": "truck",
+      "ratio": 1.0,
+      "gaussians": 254219,
+      "psnr": 25.82096564769745,
+      "ssim": 0.8771606758236885,
+      "lpips": 0.1765315318480134,
+      "train_wall_s": 224.26,
+      "fps_mean": 394.5272031558278,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_truck.json"
+    },
+    {
+      "scene": "truck",
+      "ratio": 0.9,
+      "gaussians": 227961,
+      "psnr": 25.81924343109131,
+      "ssim": 0.8758074101060629,
+      "lpips": 0.18047564895823598,
+      "train_wall_s": 218.35,
+      "fps_mean": 405.962388501732,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_truck.json"
+    },
+    {
+      "scene": "truck",
+      "ratio": 0.82,
+      "gaussians": 207698,
+      "psnr": 25.80791437625885,
+      "ssim": 0.8739033434540033,
+      "lpips": 0.18629798386245966,
+      "train_wall_s": 209.02,
+      "fps_mean": 412.0233799163874,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_truck.json"
+    },
+    {
+      "scene": "truck",
+      "ratio": 0.7,
+      "gaussians": 177303,
+      "psnr": 25.600474536418915,
+      "ssim": 0.8675633016973734,
+      "lpips": 0.20037549873813987,
+      "train_wall_s": 210.01,
+      "fps_mean": 420.27036553609986,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_truck.json"
+    },
+    {
+      "scene": "playroom",
+      "ratio": 1.0,
+      "gaussians": 181184,
+      "psnr": 30.616140365600586,
+      "ssim": 0.9109657324593643,
+      "lpips": 0.26138490952294446,
+      "train_wall_s": 204.14,
+      "fps_mean": 436.5118902494775,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_playroom.json"
+    },
+    {
+      "scene": "playroom",
+      "ratio": 0.9,
+      "gaussians": 164821,
+      "psnr": 30.645773854748956,
+      "ssim": 0.9092970284922369,
+      "lpips": 0.2630701393916689,
+      "train_wall_s": 192.08,
+      "fps_mean": 446.53744802674254,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_playroom.json"
+    },
+    {
+      "scene": "playroom",
+      "ratio": 0.82,
+      "gaussians": 150170,
+      "psnr": 30.12344873362574,
+      "ssim": 0.9091149157491224,
+      "lpips": 0.26594344603604286,
+      "train_wall_s": 212.71,
+      "fps_mean": 443.0571201297215,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_playroom.json"
+    },
+    {
+      "scene": "playroom",
+      "ratio": 0.7,
+      "gaussians": 128194,
+      "psnr": 30.248115934174635,
+      "ssim": 0.9070495593136755,
+      "lpips": 0.2688066353057993,
+      "train_wall_s": 185.08,
+      "fps_mean": 449.75685910692926,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/pareto_playroom.json"
+    }
+  ],
+  "load_reverse_minus_forward": [
+    {
+      "scene": "truck",
+      "forward_gaussians": 228333,
+      "reverse_gaussians": 194214,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/load_truck.json",
+      "forward_trace": {
+        "path": "/home/cute_cat/hab-paper-runs/20260803-opacity-per-event-82-v4/formal-v4-truck-load_forward-s0-r1/truck_load_forward_s0/hab_stats.csv",
+        "sha256": "be6766e2fe20eeb6050eacd971bd18280ed94fee6bccae0c829212b5a6019f0f",
+        "events": 32,
+        "dynamic_target_min": 221657.0,
+        "dynamic_target_mean": 224775.71875,
+        "dynamic_target_max": 228467.0,
+        "pressure_min": 0.6089644831967956,
+        "pressure_mean": 0.6946318207371395,
+        "pressure_max": 0.7480834338425364
+      },
+      "reverse_trace": {
+        "path": "/home/cute_cat/hab-paper-runs/20260803-opacity-per-event-82-v4/formal-v4-truck-load_reverse-s0-r1/truck_load_reverse_s0/hab_stats.csv",
+        "sha256": "fe2032a03130ff2b4ee3fe20cc3ffebb0b73dc0b896443cda2ef43210a7619c8",
+        "events": 32,
+        "dynamic_target_min": 188178.0,
+        "dynamic_target_mean": 190407.71875,
+        "dynamic_target_max": 193906.0,
+        "pressure_min": 0.5850775743345332,
+        "pressure_mean": 0.63653614884171,
+        "pressure_max": 0.7155101380539705
+      },
+      "delta_psnr": -0.03084695339202881,
+      "delta_ssim": -0.0031021200120449066,
+      "delta_lpips": 0.01009806664660573,
+      "wall_delta_percent": -11.001776028416465,
+      "fps_delta_reverse_vs_forward_percent": 4.984381924072942,
+      "fps_ci95_percent": [
+        1.2053986495583358,
+        8.814262966654624
+      ]
+    },
+    {
+      "scene": "train",
+      "forward_gaussians": 195215,
+      "reverse_gaussians": 188057,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/load_train.json",
+      "forward_trace": {
+        "path": "/home/cute_cat/hab-paper-runs/20260803-opacity-per-event-82-v4/formal-v4-train-load_forward-s0-r1/train_load_forward_s0/hab_stats.csv",
+        "sha256": "dd747f60f490ab518097a100fdea4cce6bee595649f7492424e418ec47cb221e",
+        "events": 32,
+        "dynamic_target_min": 188371.0,
+        "dynamic_target_mean": 192407.625,
+        "dynamic_target_max": 195693.0,
+        "pressure_min": 0.870063415480689,
+        "pressure_mean": 0.9364767580143447,
+        "pressure_max": 1.0204982917624918
+      },
+      "reverse_trace": {
+        "path": "/home/cute_cat/hab-paper-runs/20260803-opacity-per-event-82-v4/formal-v4-train-load_reverse-s0-r1/train_load_reverse_s0/hab_stats.csv",
+        "sha256": "f2984e6d9612186455aafe8a8ad768ba0aa8c9e06bb78e150d9b40d16e083f95",
+        "events": 32,
+        "dynamic_target_min": 182470.0,
+        "dynamic_target_mean": 185814.375,
+        "dynamic_target_max": 189870.0,
+        "pressure_min": 0.8494779982585985,
+        "pressure_mean": 0.923754045069992,
+        "pressure_max": 1.0112441087159099
+      },
+      "delta_psnr": 0.08309494821648755,
+      "delta_ssim": 0.0007686207168980941,
+      "delta_lpips": 0.000626913418895314,
+      "wall_delta_percent": -10.5243739334963,
+      "fps_delta_reverse_vs_forward_percent": 1.7364429124851384,
+      "fps_ci95_percent": [
+        -1.4721058847491895,
+        4.922911665429653
+      ]
+    },
+    {
+      "scene": "playroom",
+      "forward_gaussians": 165600,
+      "reverse_gaussians": 134178,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/load_playroom.json",
+      "forward_trace": {
+        "path": "/home/cute_cat/hab-paper-runs/20260803-opacity-per-event-82-v4/formal-v4-playroom-load_forward-s0-r1/playroom_load_forward_s0/hab_stats.csv",
+        "sha256": "5672d4ad3a870ae09d8f39b7d88f28b84ad799cfe7314a005091d6a15e8da928",
+        "events": 32,
+        "dynamic_target_min": 165187.0,
+        "dynamic_target_mean": 165187.0,
+        "dynamic_target_max": 165187.0,
+        "pressure_min": 0.2464207231803956,
+        "pressure_mean": 0.4135432684113581,
+        "pressure_max": 0.524978822668953
+      },
+      "reverse_trace": {
+        "path": "/home/cute_cat/hab-paper-runs/20260803-opacity-per-event-82-v4/formal-v4-playroom-load_reverse-s0-r1/playroom_load_reverse_s0/hab_stats.csv",
+        "sha256": "e4407c6cbca2ee11cfc65a0138aa751843a5e4ec81e296ee8cf4a25dabae9ebc",
+        "events": 32,
+        "dynamic_target_min": 127644.0,
+        "dynamic_target_mean": 129920.875,
+        "dynamic_target_max": 132454.0,
+        "pressure_min": 0.2464207231803955,
+        "pressure_mean": 0.3730406196366901,
+        "pressure_max": 0.46501991848696306
+      },
+      "delta_psnr": -0.26615754489241183,
+      "delta_ssim": -0.0035041693983407507,
+      "delta_lpips": 0.0049466418808904455,
+      "wall_delta_percent": -3.477935676888555,
+      "fps_delta_reverse_vs_forward_percent": 3.4053741999923908,
+      "fps_ci95_percent": [
+        0.09433236637305221,
+        6.774510413404317
+      ]
+    },
+    {
+      "scene": "drjohnson",
+      "forward_gaussians": 226016,
+      "reverse_gaussians": 188127,
+      "fps_evidence": "/home/cute_cat/hab-paper-records/20260803-opacity-per-event-82-v4/paired_fps/formal-paired-fps-v4-mechanisms-r1/load_drjohnson.json",
+      "forward_trace": {
+        "path": "/home/cute_cat/hab-paper-runs/20260803-opacity-per-event-82-v4/formal-v4-drjohnson-load_forward-s0-r1/drjohnson_load_forward_s0/hab_stats.csv",
+        "sha256": "10f412fff38ebb966e1454ae9298fa3b19b0e4c789bd0f88e0912780d0bab8c0",
+        "events": 32,
+        "dynamic_target_min": 228796.0,
+        "dynamic_target_mean": 228796.0,
+        "dynamic_target_max": 228796.0,
+        "pressure_min": 0.3512834672881718,
+        "pressure_mean": 0.5015215008975805,
+        "pressure_max": 0.6274670015808969
+      },
+      "reverse_trace": {
+        "path": "/home/cute_cat/hab-paper-runs/20260803-opacity-per-event-82-v4/formal-v4-drjohnson-load_reverse-s0-r1/drjohnson_load_reverse_s0/hab_stats.csv",
+        "sha256": "8194e41f55d41d3c2b8e11c8ca8c3c7b24145ced5f8f0730b2ed4e82a3f58c2e",
+        "events": 32,
+        "dynamic_target_min": 179285.0,
+        "dynamic_target_mean": 183570.34375,
+        "dynamic_target_max": 187648.0,
+        "pressure_min": 0.35942006538234206,
+        "pressure_mean": 0.4669815236050343,
+        "pressure_max": 0.566236583386745
+      },
+      "delta_psnr": 0.039349006884027204,
+      "delta_ssim": -0.0007063276839979205,
+      "delta_lpips": 0.0034957338463176835,
+      "wall_delta_percent": 3.4060008296077804,
+      "fps_delta_reverse_vs_forward_percent": 4.091895717851183,
+      "fps_ci95_percent": [
+        1.2020235230540073,
+        7.0401266218774365
+      ]
+    }
+  ],
+  "notes": {
+    "selected_alias": "selected/default and opacity-only are one identical row",
+    "recovery": "one-shot final_only@27k vs one-shot at_end@30k",
+    "pareto_denominator": "frozen development-selection FastGS seed-0 count"
+  }
+}

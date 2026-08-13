@@ -20,7 +20,11 @@ def sampling_cameras(my_viewpoint_stack):
 
 def get_loss(reconstructed_image, original_image):
     l1_loss = torch.mean(torch.abs(reconstructed_image - original_image), 0).detach()
-    l1_loss_norm = (l1_loss - torch.min(l1_loss)) / (torch.max(l1_loss) - torch.min(l1_loss))
+    loss_range = torch.max(l1_loss) - torch.min(l1_loss)
+    if loss_range.item() <= 1e-8:
+        l1_loss_norm = torch.zeros_like(l1_loss)
+    else:
+        l1_loss_norm = (l1_loss - torch.min(l1_loss)) / loss_range
 
     return l1_loss_norm
 
@@ -96,9 +100,19 @@ def compute_gaussian_score_fastgs(camlist, gaussians, pipe, bg, args, DENSIFY = 
         else:
             full_metric_score += photometric_loss * accum_loss_counts
 
-    pruning_score = (full_metric_score - torch.min(full_metric_score)) / (torch.max(full_metric_score) - torch.min(full_metric_score))
+    if full_metric_score is None:
+        full_metric_score = torch.zeros((gaussians.get_xyz.shape[0]), dtype=torch.float32, device=gaussians.get_xyz.device)
+
+    score_range = torch.max(full_metric_score) - torch.min(full_metric_score)
+    if score_range.item() <= 1e-8:
+        pruning_score = torch.zeros_like(full_metric_score, dtype=torch.float32)
+    else:
+        pruning_score = (full_metric_score - torch.min(full_metric_score)) / score_range
+    pruning_score = torch.nan_to_num(pruning_score.float(), nan=0.0, posinf=1.0, neginf=0.0)
     
     if DENSIFY:
+        if full_metric_counts is None:
+            full_metric_counts = torch.zeros((gaussians.get_xyz.shape[0]), dtype=torch.float32, device=gaussians.get_xyz.device)
         importance_score = torch.div(full_metric_counts, len(camlist), rounding_mode='floor')
     else:
         importance_score = None

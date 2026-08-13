@@ -99,6 +99,33 @@ class OptimizationParams(ParamGroup):
         self.dense = 0.001
         self.mult = 0.5      # multiplier for the compact box to control the tile number of each splat
 
+        # HAB-FastGS parameters. They are disabled by default so the original
+        # FastGS training recipe stays unchanged unless explicitly requested.
+        self.hab_mode = "off"
+        self.hab_target_gaussians = 0
+        self.hab_min_target_gaussians = 0
+        self.hab_budget_start_iter = 500
+        self.hab_max_prune_fraction = 0.10
+        self.hab_log_interval = 500
+        self.hab_load_target_ratio = 1.0
+        self.hab_load_ema = 0.90
+        self.hab_load_gain = 0.25
+        self.hab_load_bucket_weight = 16.0
+        self.hab_load_min_scale = 0.85
+        self.hab_load_max_scale = 1.10
+
+        # Constructed-baseline ablation switches. "joint" / "pre_densify" /
+        # "per_event" reproduce the default HAB behaviour exactly; the other
+        # values degrade one mechanism at a time so that each alternative
+        # explanation for HAB's gain can be tested independently.
+        #   hab_priority_mode: joint | random | opacity_only | score_only | radii_only
+        #   hab_prune_placement: pre_densify | post_densify
+        #   hab_budget_schedule: per_event | ramp | final_only | at_end
+        self.hab_priority_mode = "joint"
+        self.hab_exact_final_count = False
+        self.hab_prune_placement = "pre_densify"
+        self.hab_budget_schedule = "per_event"
+
         self.random_background = False
         self.optimizer_type = "default"
         super().__init__(parser, "Optimization Parameters")
