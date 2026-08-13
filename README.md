@@ -34,7 +34,7 @@ exact final count    = enabled
 | GCC/G++ | 11.4 |
 | 正式实验 GPU | NVIDIA RTX 3080 20 GB (`sm_86`) |
 
-推荐在 WSL-Ubuntu 中创建独立 conda 环境：
+创建独立 conda 环境：
 
 ```bash
 git clone https://github.com/Archaic-Atom/3DGS_WangFusheng_HAB-FastGS.git
@@ -75,13 +75,6 @@ datasets/
     ├── garden/
     ├── room/
     └── counter/
-```
-
-不要在权威数据目录中生成 COLMAP 文件、派生 PLY、缓存或训练输出。建议将输入数据只读复制到 WSL ext4，再将输出写入独立目录：
-
-```bash
-rsync -a --chmod=a-w /mnt/<drive>/datasets/tandt/truck/ ~/hab-data/tandt/truck/
-mkdir -p ~/hab-runs
 ```
 
 正式审计覆盖 8 个场景，source / WSL mirror / derived 清单逐字节一致；原始数据没有被原地修改。
