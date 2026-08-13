@@ -1,15 +1,6 @@
-<div align="center">
-
-# HAB-FastGS
-
 ### Hardware-Aware Budgeting for Fast 3D Gaussian Splatting
 
 在 [FastGS](https://github.com/fastgs/FastGS) 训练框架内实施显式 Gaussian 预算控制，面向受限硬件上的模型规模、质量与渲染速度折中。
-
-</div>
-
-> [!IMPORTANT]
-> 本仓库公开的是论文实验冻结版本 `20260803-opacity-per-event-82-v4`。正式结果支持“固定 18% Gaussian 压缩与有限场景域的资源—质量折中”，不支持广义感知质量非劣、必然训练加速或跨渲染器的普遍领先。完整门槛与失败项均在本文和 [`docs/experiments`](docs/experiments/) 中披露。
 
 ## 方法概览
 
@@ -21,8 +12,6 @@ HAB-FastGS 不改变 3D Gaussian Splatting 的表示和 FastGS rasterizer，而�
 4. 最终保存前执行精确点数检查，保证输出达到固定目标。
 5. `hab_stats.csv` 记录点数、可见率、候选数、预算裁剪量以及 rasterizer 负载代理量。
 
-开发阶段比较了 joint、opacity-only、score-only、radii-only、random、前/后置裁剪、per-event/ramp/final-only 等构造基线。预注册选择最终得到：
-
 ```text
 hab_mode             = gaussian_budget
 hab_priority_mode    = opacity_only
@@ -31,60 +20,6 @@ hab_budget_schedule  = per_event
 target ratio         = 0.82
 exact final count    = enabled
 ```
-
-joint 优先级在开发集上未通过预注册 FPS、PSNR 和最差 seed 门槛，因此不作为正式默认方法；load-feedback 只保留为敏感性实验。
-
-## 正式实验结论
-
-### FastGS 配对主实验
-
-确认集为 `train / drjohnson / garden / room`，每个场景使用 seed `{0,1,2}`。质量指标统一采用 FastGS PSNR/SSIM 和 VGG-LPIPS；FPS 使用同一 GPU、同一进程、共享 Scene 的交错配对测量。以下均为 `HAB − FastGS`：
-
-| 指标 | 层级配对估计 | 95% CI | 预注册门槛 |
-|---|---:|---:|:---:|
-| PSNR | -0.0626 dB | [-0.1304, +0.0090] | PASS |
-| SSIM | -0.00299 | [-0.00455, -0.00139] | PASS |
-| LPIPS（越低越好） | +0.00750 | [+0.00383, +0.01168] | **FAIL** |
-| 训练 wall time | -6.08% | [-8.15%, -4.08%] | **FAIL**，门槛为至少 -10% |
-| native FPS | +5.76% | [+4.15%, +7.63%] | **FAIL**，CI 下界须 >5% |
-
-精确点数、无场景平均变慢和无灾难性质量下降检查均通过。因 LPIPS、wall-time 和 FPS 置信区间门槛未全部通过，论文级结论限定为：
-
-> 在冻结的四场景确认域内，HAB-FastGS 用约 18% Gaussian 资源削减换取小幅 PSNR/SSIM 代价，并观察到约 5.8% 的配对 native FPS 提升。
-
-### 统一第三方对照
-
-下表覆盖 `truck / train / playroom / drjohnson`。质量列为四场景算术均值；FPS 与 wall 为几何均值；Gaussian 数为场景均值。不同方法使用各自原生 rasterizer，因此跨方法 FPS 是统一空闲 GPU 上的描述性比较，而不是同进程配对推断。
-
-| 方法 | PSNR | SSIM | LPIPS ↓ | FPS ↑ | wall (s) ↓ | Gaussian 数 |
-|---|---:|---:|---:|---:|---:|---:|
-| FastGS | 27.0932 | 0.87404 | 0.23748 | 395.2 | 242.9 | 229,989 |
-| **HAB-FastGS** | **26.9339** | **0.87172** | **0.24333** | **408.1** | **233.3** | **188,801** |
-| Vanilla 3DGS | 26.7892 | 0.88022 | 0.20360 | 100.4 | 1580.5 | 2,027,865 |
-| Speedy-Splat | 26.4860 | 0.86140 | 0.25391 | 437.2 | 915.5 | 216,048 |
-| Taming-3DGS | 26.4435 | 0.85735 | 0.26204 | 219.6 | 362.4 | 188,795 |
-| Mini-Splatting | 26.7178 | 0.87855 | 0.21058 | 482.0 | 1202.6 | 427,047 |
-| DashGaussian | 27.1462 | 0.87982 | 0.21391 | 126.6 | 371.9 | 1,573,590 |
-| ShorterSplatting | 26.4482 | 0.87158 | 0.20815 | 209.6 | 276.3 | 2,317,280 |
-
-相对几乎精确点数匹配的冻结 Taming-3DGS 配置，HAB-FastGS 在四个场景逐场景获得：
-
-- PSNR：+0.102 至 +0.961 dB；
-- LPIPS：改善 0.0109 至 0.0345；
-- native FPS：+65.6% 至 +103.9%；
-- 训练 wall ratio：0.542 至 0.742。
-
-质量与 FPS 门槛逐场景通过，但预注册的 `wall ≤ 0.5 × Taming` 门槛全部失败。因此允许的表述是“冻结配置下相对点数匹配 Taming 的质量/native-FPS 优势”，不能表述为至少 2× 训练加速。
-
-### 机制证据
-
-- 34/34 机制 collector 和 12/12 同步 FPS 作业完成。
-- 点数匹配时，opacity-only 相对 joint 在 `truck` 高 0.2387 dB，而在 `playroom` 低 0.2693 dB；优先级效果具有场景依赖性。
-- score-only / radii-only 在精确点数下损失 5.4–8.8 dB，random 在 `truck` 损失 0.565 dB。
-- 将一次性精确裁剪从 27k 推迟到 30k，会在 `truck` 损失 1.700–1.826 dB，在 `playroom` 损失 0.654 dB。
-- `ratio ∈ {1.0, 0.9, 0.82, 0.7}` Pareto 扫描已完成。
-
-完整统计、逐场景结果、协议、失败恢复和哈希清单见 [`docs/experiments/SUBMISSION_EXPERIMENT_REPORT.md`](docs/experiments/SUBMISSION_EXPERIMENT_REPORT.md)。
 
 ## 环境配置
 
@@ -254,16 +189,6 @@ HAB 参数默认关闭，不传任何 `--hab_*` 参数时保持 FastGS baseline 
 - [`FAILURE_LEDGER.md`](docs/experiments/FAILURE_LEDGER.md)：失败、OOM 恢复、排除规则和可用性边界。
 - [`ARTIFACT_SHA256SUMS.txt`](docs/experiments/ARTIFACT_SHA256SUMS.txt)：全部紧凑记录的 SHA-256 清单。
 
-## 局限
-
-- 正式统计确认域只有四个场景，不能外推为所有 3DGS 数据分布上的普适结论。
-- 当前主方法本质上仍是 Gaussian-count budget；`num_rendered / num_buckets` 是负载代理，尚未形成 tile-list/FPS 闭环。
-- LPIPS 预注册上界失败，说明 opacity-only 预算不包含显式感知质量保护。
-- 减少 Gaussian 数不保证任意场景、任意 rasterizer 都按同比例提升 FPS。
-- 跨方法 wall time 包含各仓库自身流程差异，只作完整官方调用的描述性比较。
-
 ## 致谢与许可
 
-本项目建立在 [FastGS](https://github.com/fastgs/FastGS) 和原始 [3D Gaussian Splatting](https://github.com/graphdeco-inria/gaussian-splatting) 代码基础上。请同时遵守 [`LICENSE`](LICENSE) 与 [`LICENSE_ORIGINAL.md`](LICENSE_ORIGINAL.md)，并在学术使用时引用对应上游论文。
-
-HAB-FastGS 的实验记录冻结于 2026-08-03；仓库中的数值均来自同一 RTX 3080 20 GB、WSL-Ubuntu 和 FastGS 统一评测口径。
+本项目建立在 [FastGS](https://github.com/fastgs/FastGS) 和原始 [3D Gaussian Splatting](https://github.com/graphdeco-inria/gaussian-splatting) 代码基础上。
