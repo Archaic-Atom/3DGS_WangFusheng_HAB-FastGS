@@ -8,17 +8,3 @@
 *.ply binary
 *.pt binary
 *.pth binary
-
-# Preserve the exact audited bytes referenced by ARTIFACT_SHA256SUMS.txt.
-docs/experiments/** -text
-
-# These implementation files are part of the audited v4 source freeze.
-arguments/__init__.py -text
-gaussian_renderer/__init__.py -text
-scene/gaussian_model.py -text
-train.py -text
-utils/fast_utils.py -text
-submodules/diff-gaussian-rasterization_fastgs/diff_gaussian_rasterization_fastgs/__init__.py -text
-submodules/diff-gaussian-rasterization_fastgs/setup.py -text
-submodules/fused-ssim/setup.py -text
-submodules/simple-knn/setup.py -text

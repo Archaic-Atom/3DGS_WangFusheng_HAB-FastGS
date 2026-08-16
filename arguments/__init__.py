@@ -114,10 +114,9 @@ class OptimizationParams(ParamGroup):
         self.hab_load_min_scale = 0.85
         self.hab_load_max_scale = 1.10
 
-        # Constructed-baseline ablation switches. "joint" / "pre_densify" /
-        # "per_event" reproduce the default HAB behaviour exactly; the other
-        # values degrade one mechanism at a time so that each alternative
-        # explanation for HAB's gain can be tested independently.
+        # Budget policy switches. "joint" / "pre_densify" / "per_event" are
+        # the default HAB behavior; the other values expose alternative ranking,
+        # placement, and scheduling strategies through the same code path.
         #   hab_priority_mode: joint | random | opacity_only | score_only | radii_only
         #   hab_prune_placement: pre_densify | post_densify
         #   hab_budget_schedule: per_event | ramp | final_only | at_end

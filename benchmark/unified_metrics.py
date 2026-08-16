@@ -1,11 +1,9 @@
 """Unified metric evaluator -- one scoring code path for every method.
 
-Each comparison method trains and renders with its OWN code (its rasterizer is
-part of the method under test), but the PSNR / SSIM / LPIPS numbers that end up
-in the paper table must come from a single implementation, or the table compares
-metric libraries rather than methods. This script is that single implementation:
-it is run from the FastGS working tree inside the `habfastgs` env, so it uses
-FastGS's own `ssim`, `psnr` and VGG-LPIPS regardless of whose PNGs it is given.
+Different renderers may produce images with their own code paths. Using one
+PSNR / SSIM / LPIPS implementation keeps metric computation consistent across
+those image sets. This script uses FastGS's `ssim`, `psnr` and VGG-LPIPS
+implementations regardless of which renderer produced the input PNGs.
 
 It is deliberately strict rather than forgiving:
   * render/GT pairing is by filename, and a mismatched set is a hard error;

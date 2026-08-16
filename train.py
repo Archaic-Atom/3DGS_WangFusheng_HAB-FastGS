@@ -355,9 +355,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             # Log and save
             # training_report(tb_writer, iteration, Ll1, loss, l1_loss, iter_time, testing_iterations, scene, render_fastgs, (pipe, background, opt.mult))
 
-            # AT-END-EXACT: an explicit no-recovery placement ablation.  The
-            # standard FastGS prune sequence still ends at 27k; only the budget
-            # ceiling is delayed until 30k.  The cut must happen before
+            # AT-END-EXACT: delay the budget ceiling until the final iteration.
+            # The cut must happen before
             # scene.save(), otherwise the saved PLY and the logged count diverge.
             if (iteration == opt.iterations
                     and getattr(opt, "hab_budget_schedule", "per_event") == "at_end"
@@ -436,9 +435,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
                     gaussians.reset_opacity()
 
-            # The multiview consistent pruning of fastgs. We do it every 3k iterations after 15k
-            # In this stage, the model converge basically. So we can prune more aggressively without degrading rendering quality.
-            # You can check the rendering results of 20K iterations in arxiv version (https://arxiv.org/abs/2511.04283), the rendering quality is already very good.
+            # FastGS multi-view-consistent pruning runs every 3k iterations after 15k.
             if iteration % 3000 == 0 and iteration > 15_000 and iteration < 30_000:
                 my_viewpoint_stack = scene.getTrainCameras().copy()
                 camlist = sampling_cameras(my_viewpoint_stack)
@@ -506,16 +503,10 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                               .format(ramp_index, ramp_events, iteration, ramp_ceiling,
                                       ramp_cut, event_stats["after_count"]))
 
-                # LAST-EVENT-EXACT: enforce the exact budget here, at the last
-                # FastGS prune event, not at the final iteration. Measured on
-                # truck: cutting 5,546 primitives at iteration 30000 with no
-                # optimisation left cost 0.67 dB PSNR (25.008 vs 25.676), and a
-                # 175k-primitive arm that pruned during training beat the 207k
-                # arm that pruned at the end. FastGS stops pruning at 27k
-                # precisely to leave a recovery window and the budget ceiling has
-                # to respect it. Densification ends at densify_until_iter (15k)
-                # so nothing adds primitives afterwards, and no prune event runs
-                # after this one, so the count set here is the count saved at 30k.
+                # LAST-EVENT-EXACT: enforce the exact budget at the last FastGS
+                # prune event so subsequent optimization can adapt to the retained
+                # set. Densification has already ended, and no later prune event
+                # changes the count saved at the final iteration.
                 last_prune_event = ((min(opt.iterations, 30_000) - 1) // 3000) * 3000
                 if iteration == last_prune_event and getattr(opt, "hab_mode", "off") != "off":
                     budget_target = int(getattr(opt, "hab_target_gaussians", 0) or 0)
