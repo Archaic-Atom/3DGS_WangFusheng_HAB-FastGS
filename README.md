@@ -152,7 +152,9 @@ python train.py \
 | `--hab_min_target_gaussians` | `0` | Optional lower bound for dynamic targets / 动态目标的可选下界 |
 | `--hab_budget_start_iter` | `500` | First iteration eligible for budget enforcement / 开始执行预算控制的迭代 |
 | `--hab_max_prune_fraction` | `0.10` | Maximum fraction removed by one budget event / 单次预算事件的最大裁剪比例 |
-| `--hab_priority_mode` | `joint` | `joint`, `opacity_only`, `score_only`, `radii_only`, or `random` / 联合、单信号或随机排序策略 |
+| `--hab_priority_mode` | `joint` | Established modes plus experimental `opacity_mv_band`, `opacity_fisher_guard`, and `opacity_mv_fisher_guard` / 已验证模式及三种实验性保护排序 |
+| `--hab_mv_candidate_multiplier` | `2.0` | Size of the low-opacity band re-ranked by the multi-view score / 由多视角分数重排的低不透明度候选带倍数 |
+| `--hab_fisher_protect_quantile` | `0.90` | Quantile protected by the diagonal empirical-Fisher proxy / 对角 empirical-Fisher 代理所保护的分位点 |
 | `--hab_prune_placement` | `pre_densify` | Apply the budget before or after densification / 在 densification 前或后执行预算控制 |
 | `--hab_budget_schedule` | `per_event` | `per_event`, `ramp`, `final_only`, or `at_end` / 按事件、渐进、末次事件或训练末尾调度 |
 | `--hab_exact_final_count` | disabled / 关闭 | Enforce the requested final count when feasible / 在可行时强制达到最终目标点数 |
@@ -161,6 +163,28 @@ python train.py \
 Training writes controller and population statistics to `hab_stats.csv` in the model directory.
 
 训练过程会将控制器状态和 Gaussian 数量统计写入模型目录下的 `hab_stats.csv`。
+
+### Experimental guarded priorities / 实验性保护排序
+
+The guarded modes keep opacity as the primary pruning boundary. `opacity_mv_band`
+only uses FastGS's existing multi-view pruning score to re-rank the lowest-opacity
+candidate band. `opacity_fisher_guard` protects primitives with large Adam
+second moments for position and log-scale. `opacity_mv_fisher_guard` combines
+both rules. The Adam statistic is a normalized **diagonal empirical-Fisher
+proxy**, not the block Gauss-Newton/Fisher matrix used by offline methods such
+as PUP 3D-GS. These modes are research ablations and are not the accepted HAB
+default until count-matched confirmation experiments pass.
+
+保护排序仍以不透明度划定裁剪边界：多视角信号只重排边界候选，Adam 已有的
+位置与对数尺度二阶矩只用于保护高敏感 Gaussian。该量是低开销的对角
+empirical-Fisher 代理，并非离线方法计算的块 Gauss-Newton/Fisher 矩阵。在等点数
+确认实验通过前，这些模式均属于研究消融，不替代当前 HAB 默认策略。
+
+```bash
+--hab_priority_mode opacity_mv_fisher_guard \
+--hab_mv_candidate_multiplier 2.0 \
+--hab_fisher_protect_quantile 0.90
+```
 
 ## Rendering / 渲染
 

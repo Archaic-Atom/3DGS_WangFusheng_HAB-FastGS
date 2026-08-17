@@ -163,8 +163,10 @@ class HABStatsLogger:
             "event_before_count", "event_after_count",
             "clone_candidates", "split_candidates",
             "baseline_prune_candidates", "baseline_pruned", "hab_budget_pruned",
+            "hab_candidate_band_count", "hab_fisher_protected", "hab_fisher_guard_relaxed",
             "budget_floor_spared", "hab_ramp_ceiling",
             "hab_mode", "hab_priority_mode", "hab_budget_schedule",
+            "hab_mv_candidate_multiplier", "hab_fisher_protect_quantile",
             "hab_exact_final_count", "hab_target_gaussians", "hab_dynamic_target_gaussians",
             "hab_load_cost", "hab_load_density", "hab_load_cost_ema",
             "hab_load_density_ema", "hab_load_target_cost", "hab_load_pressure"
@@ -229,11 +231,16 @@ class HABStatsLogger:
             "baseline_prune_candidates": int(event_stats.get("baseline_prune_candidates", 0) or 0),
             "baseline_pruned": int(event_stats.get("baseline_pruned", 0) or 0),
             "hab_budget_pruned": int(event_stats.get("hab_budget_pruned", 0) or 0),
+            "hab_candidate_band_count": int(event_stats.get("hab_candidate_band_count", 0) or 0),
+            "hab_fisher_protected": int(event_stats.get("hab_fisher_protected", 0) or 0),
+            "hab_fisher_guard_relaxed": int(event_stats.get("hab_fisher_guard_relaxed", 0) or 0),
             "budget_floor_spared": int(event_stats.get("budget_floor_spared", 0) or 0),
             "hab_ramp_ceiling": int(event_stats.get("hab_ramp_ceiling", 0) or 0),
             "hab_mode": getattr(opt, "hab_mode", "off"),
             "hab_priority_mode": getattr(opt, "hab_priority_mode", "joint"),
             "hab_budget_schedule": getattr(opt, "hab_budget_schedule", "per_event"),
+            "hab_mv_candidate_multiplier": float(getattr(opt, "hab_mv_candidate_multiplier", 2.0)),
+            "hab_fisher_protect_quantile": float(getattr(opt, "hab_fisher_protect_quantile", 0.90)),
             "hab_exact_final_count": int(bool(getattr(opt, "hab_exact_final_count", False))),
             "hab_target_gaussians": int(getattr(opt, "hab_target_gaussians", 0) or 0),
             "hab_dynamic_target_gaussians": int(event_stats.get(
@@ -371,7 +378,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         end_cameras, gaussians, pipe, bg, opt)
                     end_cut, end_keep_mask = gaussians._hab_prune_to_budget(
                         end_target, 1.0, end_score, 0.1,
-                        getattr(opt, "hab_priority_mode", "joint"))
+                        getattr(opt, "hab_priority_mode", "joint"),
+                        getattr(opt, "hab_fisher_protect_quantile", 0.90),
+                        getattr(opt, "hab_mv_candidate_multiplier", 2.0))
                     if end_keep_mask is not None:
                         if end_score.reshape(-1).shape[0] != end_keep_mask.shape[0]:
                             raise RuntimeError(
@@ -387,6 +396,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         "final_prune_event": True,
                         "pruning_score": end_score,
                     }
+                    event_stats.update(gaussians.last_hab_priority_stats)
                     if event_stats["after_count"] != end_target:
                         raise RuntimeError(
                             "at_end exact budget failed: {} != {}".format(
@@ -489,7 +499,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     if gaussians.get_xyz.shape[0] > ramp_ceiling:
                         ramp_cut, ramp_keep_mask = gaussians._hab_prune_to_budget(
                             ramp_ceiling, 1.0, pruning_score, 0.1,
-                            getattr(opt, "hab_priority_mode", "joint"))
+                            getattr(opt, "hab_priority_mode", "joint"),
+                            getattr(opt, "hab_fisher_protect_quantile", 0.90),
+                            getattr(opt, "hab_mv_candidate_multiplier", 2.0))
                         if ramp_keep_mask is not None:
                             if pruning_score.shape[0] != ramp_keep_mask.shape[0]:
                                 raise RuntimeError(
@@ -499,6 +511,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         event_stats["hab_budget_pruned"] = int(
                             event_stats.get("hab_budget_pruned", 0)) + int(ramp_cut)
                         event_stats["after_count"] = int(gaussians.get_xyz.shape[0])
+                        event_stats.update(gaussians.last_hab_priority_stats)
                         print("[ramp] event {}/{} @ iter {}: ceiling {} removed {} -> {}"
                               .format(ramp_index, ramp_events, iteration, ramp_ceiling,
                                       ramp_cut, event_stats["after_count"]))
@@ -518,7 +531,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     if budget_target > 0 and wants_exact and current_n > budget_target:
                         n_cut, exact_keep_mask = gaussians._hab_prune_to_budget(
                             budget_target, 1.0, pruning_score, 0.1,
-                            getattr(opt, "hab_priority_mode", "joint"))
+                            getattr(opt, "hab_priority_mode", "joint"),
+                            getattr(opt, "hab_fisher_protect_quantile", 0.90),
+                            getattr(opt, "hab_mv_candidate_multiplier", 2.0))
                         if exact_keep_mask is not None:
                             if pruning_score.shape[0] != exact_keep_mask.shape[0]:
                                 raise RuntimeError(
@@ -528,6 +543,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         event_stats["hab_budget_pruned"] = int(
                             event_stats.get("hab_budget_pruned", 0)) + int(n_cut)
                         event_stats["after_count"] = int(gaussians.get_xyz.shape[0])
+                        event_stats.update(gaussians.last_hab_priority_stats)
                         label = "final_only" if schedule_mode == "final_only" else "exact_budget"
                         print("[{}] budget prune removed {} -> {} (target {}) @ iter {}".format(
                             label, n_cut, gaussians.get_xyz.shape[0], budget_target, iteration))

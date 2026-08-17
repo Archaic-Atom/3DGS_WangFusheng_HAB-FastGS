@@ -20,6 +20,7 @@ from utils.sh_utils import RGB2SH
 from simple_knn._C import distCUDA2
 from utils.graphics_utils import BasicPointCloud
 from utils.general_utils import strip_symmetric, build_scaling_rotation
+from utils.hab_priority_utils import select_guarded_prune_indices
 
 try:
     from diff_gaussian_rasterization import SparseGaussianAdam
@@ -69,6 +70,7 @@ class GaussianModel:
         self.percent_dense = 0
         self.spatial_lr_scale = 0
         self.last_hab_stats = {}
+        self.last_hab_priority_stats = {}
         # Pruning may be invoked outside a densification event (for example with
         # the at-end schedule), so the optional radii cache must
         # exist from construction rather than being created lazily.
@@ -478,8 +480,42 @@ class GaussianModel:
             return value
         return value[keep_mask]
 
+    def _hab_empirical_fisher_proxy(self):
+        """Return a low-overhead diagonal empirical-Fisher sensitivity proxy.
+
+        Adam already keeps an EMA of squared gradients.  We aggregate the
+        position and log-scale second moments after robust, per-group
+        normalization.  This is intentionally described as a proxy rather than
+        the block Gauss-Newton/Fisher score used by post-hoc pruning methods.
+        """
+        if self.optimizer is None:
+            return None
+        current_count = int(self.get_xyz.shape[0])
+        contributions = []
+        for group in self.optimizer.param_groups:
+            if group.get("name") not in ("xyz", "scaling") or not group.get("params"):
+                continue
+            state = self.optimizer.state.get(group["params"][0], None)
+            if not state or "exp_avg_sq" not in state:
+                continue
+            second_moment = state["exp_avg_sq"].detach().float()
+            if second_moment.shape[0] != current_count:
+                continue
+            diagonal = torch.nan_to_num(
+                second_moment.reshape(current_count, -1).mean(dim=1),
+                nan=0.0, posinf=torch.finfo(torch.float32).max, neginf=0.0)
+            positive = diagonal[diagonal > 0]
+            if positive.numel() == 0:
+                continue
+            scale = torch.quantile(positive, 0.5).clamp_min(1e-30)
+            contributions.append(torch.log1p(diagonal / scale))
+        if not contributions:
+            return None
+        return torch.stack(contributions, dim=0).mean(dim=0)
+
     def _hab_prune_to_budget(self, target_count, max_prune_fraction, pruning_score, min_opacity,
-                             priority_mode="joint"):
+                             priority_mode="joint", fisher_protect_quantile=0.90,
+                             mv_candidate_multiplier=2.0):
         """Prune the Gaussian set down towards ``target_count``.
 
         ``priority_mode`` selects which signals form the pruning priority. The
@@ -489,6 +525,11 @@ class GaussianModel:
         fraction, and trigger schedule unchanged.
         """
         current_count = self.get_xyz.shape[0]
+        self.last_hab_priority_stats = {
+            "hab_candidate_band_count": 0,
+            "hab_fisher_protected": 0,
+            "hab_fisher_guard_relaxed": 0,
+        }
         excess = current_count - target_count
         if target_count <= 0 or excess <= 0 or max_prune_fraction <= 0:
             return 0, None
@@ -535,6 +576,36 @@ class GaussianModel:
             # global torch RNG, which train.py seeds explicitly.
             priority = torch.rand((current_count), dtype=torch.float32, device=device)
 
+        guarded_modes = {
+            "opacity_mv_band",
+            "opacity_fisher_guard",
+            "opacity_mv_fisher_guard",
+        }
+        if priority_mode in guarded_modes:
+            fisher_proxy = None
+            if priority_mode in ("opacity_fisher_guard", "opacity_mv_fisher_guard"):
+                fisher_proxy = self._hab_empirical_fisher_proxy()
+            selected_indices, diagnostics = select_guarded_prune_indices(
+                prune_budget=prune_budget,
+                eligible=eligible,
+                opacities=opacities,
+                pruning_score=pruning_score,
+                fisher_proxy=fisher_proxy,
+                mode=priority_mode,
+                candidate_multiplier=mv_candidate_multiplier,
+                fisher_protect_quantile=fisher_protect_quantile,
+            )
+            self.last_hab_priority_stats = diagnostics
+            if selected_indices.numel() == 0:
+                return 0, None
+            budget_prune_mask = torch.zeros(
+                (current_count), dtype=torch.bool, device=device)
+            budget_prune_mask[selected_indices] = True
+            pruned = int(torch.sum(budget_prune_mask).item())
+            keep_mask = ~budget_prune_mask
+            self.prune_points(budget_prune_mask)
+            return pruned, keep_mask
+
         priority[~eligible] = -float("inf")
         available = int(torch.isfinite(priority).sum().item())
         if available <= 0:
@@ -576,6 +647,10 @@ class GaussianModel:
         budget_start_iter = int(getattr(args, "hab_budget_start_iter", 0) or 0)
         max_prune_fraction = float(getattr(args, "hab_max_prune_fraction", 0.0) or 0.0)
         priority_mode = getattr(args, "hab_priority_mode", "joint")
+        fisher_protect_quantile = float(getattr(
+            args, "hab_fisher_protect_quantile", 0.90))
+        mv_candidate_multiplier = float(getattr(
+            args, "hab_mv_candidate_multiplier", 2.0))
         placement = getattr(args, "hab_prune_placement", "pre_densify")
         schedule = getattr(args, "hab_budget_schedule", "per_event")
 
@@ -590,9 +665,11 @@ class GaussianModel:
 
         if budget_active and placement == "pre_densify":
             hab_pruned, keep_mask = self._hab_prune_to_budget(
-                target_count, max_prune_fraction, pruning_score, min_opacity, priority_mode
+                target_count, max_prune_fraction, pruning_score, min_opacity, priority_mode,
+                fisher_protect_quantile, mv_candidate_multiplier
             )
             stats["hab_budget_pruned"] = hab_pruned
+            stats.update(self.last_hab_priority_stats)
             importance_score = self._filter_hab_vector(importance_score, keep_mask)
             pruning_score = self._filter_hab_vector(pruning_score, keep_mask)
             if keep_mask is not None and self.tmp_radii is not None:
@@ -661,9 +738,11 @@ class GaussianModel:
         # Gaussian set, so _hab_prune_to_budget restricts eligibility safely.
         if budget_active and placement == "post_densify":
             hab_pruned, _ = self._hab_prune_to_budget(
-                target_count, max_prune_fraction, pruning_score, min_opacity, priority_mode
+                target_count, max_prune_fraction, pruning_score, min_opacity, priority_mode,
+                fisher_protect_quantile, mv_candidate_multiplier
             )
             stats["hab_budget_pruned"] = hab_pruned
+            stats.update(self.last_hab_priority_stats)
 
         opacities_new = inverse_sigmoid(torch.min(self.get_opacity, torch.ones_like(self.get_opacity)*0.8))
         optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")

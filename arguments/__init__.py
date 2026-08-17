@@ -118,9 +118,13 @@ class OptimizationParams(ParamGroup):
         # the default HAB behavior; the other values expose alternative ranking,
         # placement, and scheduling strategies through the same code path.
         #   hab_priority_mode: joint | random | opacity_only | score_only | radii_only
+        #                      | opacity_mv_band | opacity_fisher_guard
+        #                      | opacity_mv_fisher_guard
         #   hab_prune_placement: pre_densify | post_densify
         #   hab_budget_schedule: per_event | ramp | final_only | at_end
         self.hab_priority_mode = "joint"
+        self.hab_mv_candidate_multiplier = 2.0
+        self.hab_fisher_protect_quantile = 0.90
         self.hab_exact_final_count = False
         self.hab_prune_placement = "pre_densify"
         self.hab_budget_schedule = "per_event"
